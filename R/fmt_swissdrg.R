@@ -24,7 +24,7 @@ fmt_swissdrg <- function(
   )
 
   format <- match.arg(format)
-  tarif <- match.arg(tariff)
+  tariff <- match.arg(tariff)
 
   spiges_admin <- spiges_data$admin
   spiges_neugeb <- spiges_data$neugeborene |>
@@ -33,8 +33,17 @@ fmt_swissdrg <- function(
   spiges_proc <- spiges_data$proc
   spiges_medi <- spiges_data$medi
 
+  if ('los' %in% names(spiges_data)) {
+    spiges_los <- spiges_data$los
+  } else {
+    spiges_los <- calc_los(spiges_data)
+  }
+
   # format admin
   swissdrg_admin <- fmt_swissdrg_admin(spiges_admin)
+
+  # format los
+  swissdrg_los <- fmt_swissdrg_los(spiges_los, tariff)
 
   # format babydata
   swissdrg_babydata <- fmt_swissdrg_babydata(spiges_admin, spiges_neugeb)
@@ -51,6 +60,8 @@ fmt_swissdrg <- function(
   swissdrg_combined <-
     swissdrg_admin |>
     dplyr::inner_join(swissdrg_babydata, by = "ID") |>
+    dplyr::left_join(swissdrg_los, by = "ID") |>
+    dplyr::mutate(los = dplyr::coalesce(los, '')) |>
     dplyr::left_join(swissdrg_diags, by = "ID") |>
     dplyr::mutate(diagnoses = dplyr::coalesce(diagnoses, '')) |>
     dplyr::left_join(swissdrg_procs, by = "ID") |>
@@ -90,7 +101,7 @@ fmt_swissdrg_admin <- function(admin) {
       'fall_id',
       'alter',
       'alter_U1',
-      'sex',
+      'geschlecht',
       'eintrittsdatum',
       'eintritt_aufenthalt',
       'eintrittsart',
@@ -116,15 +127,15 @@ fmt_swissdrg_admin <- function(admin) {
         '',
         as.character(alter_U1)
       ),
-      sex = dplyr::case_match(sex, `1` ~ 'M', `2` ~ 'W', .default = ''),
-      adm_date = format(eintrittsdatum, '%Y%m%d'),
+      sex = dplyr::case_match(geschlecht, 1 ~ 'M', 2 ~ 'W', .default = ''),
+      adm_date = substr(eintrittsdatum, 1, 8),
       adm_mode = dplyr::case_when(
         eintrittsart == 3L ~ '01',
         eintritt_aufenthalt == 6L & eintrittsart != 5L ~ '11',
         eintritt_aufenthalt == 6L & eintrittsart == 5L ~ '06',
         eintritt_aufenthalt != 6L ~ '01'
       ),
-      exit_date = format(austrittsdatum, '%Y%m%d'),
+      exit_date = substr(austrittsdatum, 1, 8),
       exit_mode = dplyr::case_when(
         austrittsentscheid == 5L ~ '07',
         austrittsentscheid != 5L & austritt_aufenthalt == 6L ~ '06',
@@ -132,7 +143,6 @@ fmt_swissdrg_admin <- function(admin) {
         !(austrittsentscheid %in% c(2L, 3L, 5L)) &
           austritt_aufenthalt != 6L ~ '00'
       ),
-      los = NA, # TBD
       resp_hours = as.character(beatmung)
     ) |>
     dplyr::select(
@@ -145,13 +155,35 @@ fmt_swissdrg_admin <- function(admin) {
       adm_mode,
       exit_date,
       exit_mode,
-      los,
       resp_hours
     )
 
   return(swissdrg_admin)
 }
 
+
+#' Internal: format length-of-stay records for SwissDRG-Grouper input
+fmt_swissdrg_los <- function(los, tariff) {
+  if (tariff == 'SwissDRG') {
+    tariff_los <-
+      los |>
+      dplyr::mutate(ID = fall_id, los = as.character(los_drg), .keep = 'none')
+  } else if (tariff == 'ST Reha') {
+    tariff_los <-
+      los |>
+      dplyr::mutate(ID = fall_id, los = as.character(los_stre), .keep = 'none')
+  } else if (tariff == 'TARPSY') {
+    tariff_los <-
+      los |>
+      dplyr::mutate(ID = fall_id, los = as.character(los_tpsy), .keep = 'none')
+  } else {
+    tariff_los <-
+      los |>
+      dplyr::mutate(ID = fall_id, los = '')
+  }
+
+  return(tariff_los)
+}
 
 #' Internal: format babydata records for SwissDRG-Grouper input
 fmt_swissdrg_babydata <- function(admin, neugeb) {
@@ -197,14 +229,16 @@ fmt_swissdrg_babydata <- function(admin, neugeb) {
   }
 
   babydata <-
-    dplyr::left_join(ggw_data, ssw_data) |>
+    dplyr::left_join(ggw_data, ssw_data, by = 'fall_id') |>
     dplyr::mutate(
       ggw = dplyr::coalesce(as.character(ggw), ''),
       ssw = dplyr::coalesce(as.character(ssw), '')
     ) |>
-    tidyr::unite(babydata, ggw, ssw, sep = '|') |>
-    dplyr::mutate(babydata = if_else(babydata == '|', '', babydata)) |>
-    dplyr::select(fall_id, babydata)
+    tidyr::unite(baby_data, ggw, ssw, sep = '|') |>
+    dplyr::mutate(
+      baby_data = dplyr::if_else(baby_data == '|', '', baby_data)
+    ) |>
+    dplyr::select(ID = fall_id, baby_data)
 
   return(babydata)
 }
@@ -214,7 +248,7 @@ fmt_swissdrg_babydata <- function(admin, neugeb) {
 fmt_swissdrg_diag <- function(diag) {
   # check varibles
   check_spiges_var(
-    admin,
+    diag,
     c('fall_id', 'diagnose_id', 'diagnose_kode', 'diagnose_zusatz')
   )
 
@@ -234,8 +268,8 @@ fmt_swissdrg_diag <- function(diag) {
       )
     ) |>
     dplyr::arrange(rang) |>
-    dplyr::summarise(diags = paste0(diags, collapse = ';'), .by = ID) |>
-    dplyr::mutate(diags = if_else(is.na(diags), '', diags)) |>
+    dplyr::summarise(diags = paste0(code, collapse = ';'), .by = ID) |>
+    dplyr::mutate(diags = dplyr::if_else(is.na(diags), '', diags)) |>
     dplyr::select(ID, diagnoses = diags)
 
   return(swissdrg_diag)
@@ -246,7 +280,7 @@ fmt_swissdrg_diag <- function(diag) {
 fmt_swissdrg_proc <- function(proc) {
   # check varibles
   check_spiges_var(
-    admin,
+    proc,
     c(
       'fall_id',
       'behandlung_id',
@@ -257,23 +291,24 @@ fmt_swissdrg_proc <- function(proc) {
   )
 
   swissdrg_proc <- proc |>
-    dplyr::select(
+    dplyr::mutate(
       ID = fall_id,
       rang = behandlung_id,
       code = behandlung_chop,
-      seitigkeit = case_match(
+      seitigkeit = dplyr::case_match(
         behandlung_seitigkeit,
         0 ~ 'B',
         1 ~ 'R',
         2 ~ 'L',
         .default = ''
       ),
-      beginn = as.character(behandlung_beginn)
+      beginn = as.character(behandlung_beginn),
+      .keep = 'none'
     ) |>
-    dplyr::mutate(procs = paste0(code, ':', seitigkeit, ':', beginn)) %>%
+    dplyr::mutate(procs = paste0(code, ':', seitigkeit, ':', beginn)) |>
     dplyr::arrange(rang) |>
-    dplyr::summarise(procs = paste0(procs, collapse = ';'), .by = ID) %>%
-    dplyr::mutate(procs = if_else(is.na(procs), '', procs)) %>%
+    dplyr::summarise(procs = paste0(procs, collapse = ';'), .by = ID) |>
+    dplyr::mutate(procs = dplyr::if_else(is.na(procs), '', procs)) |>
     dplyr::select(ID, procedures = procs)
 
   return(swissdrg_proc)
@@ -283,7 +318,7 @@ fmt_swissdrg_proc <- function(proc) {
 fmt_swissdrg_medi <- function(medi) {
   # check varibles
   check_spiges_var(
-    admin,
+    medi,
     c(
       'fall_id',
       'medi_id',
@@ -319,7 +354,7 @@ fmt_swissdrg_medi <- function(medi) {
       )
     ) %>%
     dplyr::arrange(medi_id) |>
-    dplyr::mutate(procs = if_else(is.na(medis), '', medis)) %>%
+    dplyr::mutate(procs = dplyr::if_else(is.na(medis), '', medis)) %>%
     dplyr::select(ID, medications = medis)
 
   return(swissdrg_medi)
