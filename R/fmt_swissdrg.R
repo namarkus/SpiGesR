@@ -59,7 +59,8 @@ fmt_swissdrg <- function(
 
   swissdrg_combined <-
     swissdrg_admin |>
-    dplyr::inner_join(swissdrg_babydata, by = "ID") |>
+    dplyr::left_join(swissdrg_babydata, by = "ID") |>
+    dplyr::mutate(baby_data = dplyr::coalesce(baby_data, '')) |>
     dplyr::left_join(swissdrg_los, by = "ID") |>
     dplyr::mutate(los = dplyr::coalesce(los, '')) |>
     dplyr::left_join(swissdrg_diags, by = "ID") |>
@@ -195,16 +196,16 @@ fmt_swissdrg_babydata <- function(admin, neugeb) {
 
   if (has_aufnahme & has_geburts) {
     ggw_data <-
-      dplyr::left_join(admin, neugeb, by = 'fall_id') |>
+      dplyr::inner_join(admin, neugeb, by = 'fall_id') |>
       dplyr::mutate(ggw = dplyr::coalesce(aufnahmegewicht, geburtsgewicht)) |>
       dplyr::select(fall_id, ggw)
   } else if (has_geburts) {
     ggw_data <-
-      dplyr::left_join(admin, neugeb, by = 'fall_id') |>
+      dplyr::inner_join(admin, neugeb, by = 'fall_id') |>
       dplyr::select(fall_id, ggw = geburtsgewicht)
   } else if (has_aufnahme) {
     ggw_data <-
-      dplyr::left_join(admin, neugeb, by = 'fall_id') |>
+      dplyr::inner_join(admin, neugeb, by = 'fall_id') |>
       dplyr::select(fall_id, ggw = aufnahmegewicht)
   } else {
     stop(
@@ -229,7 +230,7 @@ fmt_swissdrg_babydata <- function(admin, neugeb) {
   }
 
   babydata <-
-    dplyr::left_join(ggw_data, ssw_data, by = 'fall_id') |>
+    dplyr::inner_join(ggw_data, ssw_data, by = 'fall_id') |>
     dplyr::mutate(
       ggw = dplyr::coalesce(as.character(ggw), ''),
       ssw = dplyr::coalesce(as.character(ssw), '')
