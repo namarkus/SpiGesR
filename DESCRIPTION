@@ -1,0 +1,23 @@
+Package: SpiGesR
+Type: Package
+Title: Swiss inpatient hospital data (SpiGes) Import, Export and Analytic Tools
+Version: 0.1.0
+Authors@R: c(
+    person(
+      "Markus", "Näpflin",
+      email = "markus@naepfl.in",
+      role = c("aut", "cre")
+    )
+  )
+Description: Tools for importing, processing, and exporting Swiss inpatient hospital data
+    (SpiGes) in various formats. Supports XML and CSV import, as well as export
+    to XML, SwissDRG, and SPLG formats. Handles multilingual code lists and
+    variable conversion according to the SpiGes documentation.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Depends: 
+    R (>= 3.5)
