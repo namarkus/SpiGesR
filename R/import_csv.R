@@ -222,8 +222,8 @@ make_coltypes <- function(spiges_tablecolumns, fileheaders, col_types) {
       )
       spiges_cols <- spiges_cols |>
         dplyr::mutate(
-          canonical = coalesce(canonical, tolower(fileheader)),
-          type = coalesce(type, 'unknown')
+          canonical = dplyr::coalesce(canonical, tolower(fileheader)),
+          type = dplyr::coalesce(type, 'unknown')
         )
     }
 
@@ -267,7 +267,7 @@ make_coltypes <- function(spiges_tablecolumns, fileheaders, col_types) {
       dplyr::left_join(col_types, by = c('fileheader' = 'user_varname')) |>
       dplyr::left_join(col_types, by = c('canonical' = 'user_varname')) |>
       dplyr::mutate(
-        col_spec = coalesce(user_col_spec.x, user_col_spec.y, col_spec),
+        col_spec = dplyr::coalesce(user_col_spec.x, user_col_spec.y, col_spec),
         user_col_fg = !is.na(user_col_spec.x) | !is.na(user_col_spec.y)
       ) |>
       dplyr::select(fileheader, canonical, type, col_spec, anon_fg, user_col_fg)
@@ -289,6 +289,18 @@ read_spiges_csv <- function(
 ) {
   spiges_data <- vector(mode = 'list', length = length(selected_files))
   names(spiges_data) <- names(selected_files)
+
+  # Try to create a progress bar (uses progress package if installed).
+  use_pb <- FALSE
+  if (requireNamespace("progress", quietly = TRUE)) {
+    pb <- progress::progress_bar$new(
+      format = "  Reading SpiGes files :file [:bar] :current/:total (:eta)",
+      total = length(selected_files),
+      clear = FALSE,
+      show_after = 0
+    )
+    use_pb <- TRUE
+  }
 
   for (tablenm in names(selected_files)) {
     # mapping for rename variables
@@ -385,6 +397,11 @@ read_spiges_csv <- function(
 
     spiges_data[[tablenm]] <- spiges_csv |>
       dplyr::relocate(fall_id, .after = jahr)
+  }
+
+  # advance progress bar after the file was processed
+  if (use_pb) {
+    pb$tick(tokens = list(file = basename(selected_files[[tablenm]])))
   }
 
   return(spiges_data)
