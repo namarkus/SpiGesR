@@ -14,13 +14,17 @@
 #' }
 fmt_swissdrg <- function(
   spiges_data,
-  version = "1.4"
+  format = 'BATCH_2017',
+  tariff = c('SwissDRG', 'ST Reha', 'TARPSY')
 ) {
   # Check input
   check_spiges_tables(
     spiges_data,
     c('admin', 'neugeborene', 'diag', 'proc', 'medi')
   )
+
+  format <- match.arg(format)
+  tarif <- match.arg(tariff)
 
   spiges_admin <- spiges_data$admin
   spiges_neugeb <- spiges_data$neugeborene |>

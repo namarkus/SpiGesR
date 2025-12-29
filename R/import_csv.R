@@ -151,7 +151,7 @@ read_bfs_spiges <- function(
   attr(spiges_data, "Datenversion") <- Datenversion
   attr(spiges_data, "Source") <- "SpiGes"
   attr(spiges_data, "Sourcefromat") <- "CSV"
-  attr(spiges_data, "Version") <- "SpiGes"
+  attr(spiges_data, "Version") <- version
 
   class(spiges_data) <- c("spiges_data", class(spiges_data))
 
@@ -339,7 +339,7 @@ read_spiges_csv <- function(
     csv_problems <- readr::problems(spiges_csv)
 
     # prepe int conversion problems
-    int_problems <- tibble(
+    int_problems <- tibble::tibble(
       row = integer(),
       col = integer(),
       expected = character(),
@@ -360,7 +360,7 @@ read_spiges_csv <- function(
       if (length(bad_idx) > 0) {
         int_problems <- dplyr::bind_rows(
           int_problems,
-          tibble(
+          tibble::tibble(
             row = bad_idx,
             col = int_col_nr,
             expected = "an integer",
