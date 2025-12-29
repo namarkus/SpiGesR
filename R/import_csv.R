@@ -352,7 +352,10 @@ read_spiges_csv <- function(
     for (col_n in int_col_nr) {
       col_value <- spiges_csv[[col_n]]
       value_is_int <- is.na(col_value) |
-        (is.finite(col_value) & abs(col_value - round(col_value)) <= 1e-8)
+        (is.finite(col_value) &
+          abs(col_value - round(col_value)) <= 1e-8 &
+          col_value >= -.Machine$integer.max - 1 &
+          col_value <= .Machine$integer.max)
 
       # --- Problems sammeln -------------------------------------------
       bad_idx <- which(!value_is_int)
@@ -362,16 +365,16 @@ read_spiges_csv <- function(
           int_problems,
           tibble::tibble(
             row = bad_idx,
-            col = int_col_nr,
+            col = col_n,
             expected = "an integer",
             actual = as.character(col_value[bad_idx]),
-            file = file
+            file = tablenm
           )
         )
       }
 
       # --- Konvertieren -----------------------------------------------
-      int_value <- as.integer(round(col_value))
+      int_value <- as.integer(round(col_value[value_is_int]))
       int_value[!value_is_int] <- NA_integer_
       spiges_csv[[col_n]] <- int_value
     }
