@@ -254,6 +254,9 @@ fmt_swissdrg_diag <- function(diag) {
   )
 
   swissdrg_diag <- diag |>
+    dplyr::filter(
+      !is.na(diagnose_id) & !is.na(diagnose_kode) & diagnose_kode != ''
+    ) |>
     dplyr::select(
       ID = fall_id,
       rang = diagnose_id,
@@ -264,12 +267,13 @@ fmt_swissdrg_diag <- function(diag) {
     dplyr::mutate(
       code = dplyr::if_else(
         rang == 1 & zusatz != '' & !is.na(zusatz),
-        paste0(code, ':', zusatz),
+        paste0(code, '|', zusatz),
         code
       )
     ) |>
-    dplyr::arrange(rang) |>
-    dplyr::summarise(diags = paste0(code, collapse = ';'), .by = ID) |>
+    dplyr::group_by(ID) |>
+    dplyr::arrange(rang, .by_group = TRUE) |>
+    dplyr::summarise(diags = paste0(code, collapse = '|'), .groups = 'drop') |>
     dplyr::mutate(diags = dplyr::if_else(is.na(diags), '', diags)) |>
     dplyr::select(ID, diagnoses = diags)
 
@@ -292,6 +296,9 @@ fmt_swissdrg_proc <- function(proc) {
   )
 
   swissdrg_proc <- proc |>
+    dplyr::filter(
+      !is.na(behandlung_id) & !is.na(behandlung_chop) & behandlung_chop != ''
+    ) |>
     dplyr::mutate(
       ID = fall_id,
       rang = behandlung_id,
@@ -303,12 +310,17 @@ fmt_swissdrg_proc <- function(proc) {
         2 ~ 'L',
         .default = ''
       ),
-      beginn = as.character(behandlung_beginn),
+      beginn = dplyr::if_else(
+        is.na(behandlung_beginn),
+        '',
+        as.character(behandlung_beginn)
+      ),
       .keep = 'none'
     ) |>
     dplyr::mutate(procs = paste0(code, ':', seitigkeit, ':', beginn)) |>
-    dplyr::arrange(rang) |>
-    dplyr::summarise(procs = paste0(procs, collapse = ';'), .by = ID) |>
+    dplyr::group_by(ID) |>
+    dplyr::arrange(rang, .by_group = TRUE) |>
+    dplyr::summarise(procs = paste0(procs, collapse = '|'), .groups = 'drop') |>
     dplyr::mutate(procs = dplyr::if_else(is.na(procs), '', procs)) |>
     dplyr::select(ID, procedures = procs)
 
@@ -332,14 +344,15 @@ fmt_swissdrg_medi <- function(medi) {
   )
 
   swissdrg_medi <- medi |>
-    dplyr::select(
+    dplyr::mutate(
       ID = fall_id,
       medi_id,
-      atc_code = medi_atc,
-      annex = medi_zusatz,
-      application = medi_verabreichungsart,
-      dose = medi_dosis,
-      unit = medi_einheit
+      atc_code = tidyr::replace_na(medi_atc, ''),
+      annex = tidyr::replace_na(medi_zusatz, ''),
+      application = tidyr::replace_na(medi_verabreichungsart, ''),
+      dose = dplyr::if_else(is.na(medi_dosis), '', as.character(medi_dosis)),
+      unit = tidyr::replace_na(medi_einheit, ''),
+      .keep = 'none'
     ) |>
     dplyr::mutate(
       medis = paste0(
@@ -354,8 +367,10 @@ fmt_swissdrg_medi <- function(medi) {
         unit
       )
     ) %>%
-    dplyr::arrange(medi_id) |>
-    dplyr::mutate(procs = dplyr::if_else(is.na(medis), '', medis)) %>%
+    dplyr::group_by(ID) |>
+    dplyr::arrange(medi_id, .by_group = TRUE) |>
+    dplyr::summarise(medis = paste0(medis, collapse = '|'), .groups = 'drop') |>
+    dplyr::mutate(medis = dplyr::if_else(is.na(medis), '', medis)) %>%
     dplyr::select(ID, medications = medis)
 
   return(swissdrg_medi)
