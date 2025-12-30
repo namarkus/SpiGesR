@@ -17,7 +17,7 @@
 #' id_file <- system.file("extdata", "do-d-14.04-SPIGES-2024-03.xml", package = "SpiGesR")
 #' data <- import_spiges_xml(data_file, id_file)
 #' }
-import_spiges_xml <- function(data_file, id_file, version = "1.4") {
+read_spiges_xml <- function(data_file, id_file, version = "1.4") {
   # Check if files exist
   if (!file.exists(data_file)) {
     stop("Data file does not exist: ", data_file)
@@ -41,7 +41,13 @@ import_spiges_xml <- function(data_file, id_file, version = "1.4") {
   # Check version
   xml_version <- xml2::xml_attr(data_xml, "version")
   if (xml_version != version) {
-    warning("XML file version (", xml_version, ") differs from requested version (", version, ")")
+    warning(
+      "XML file version (",
+      xml_version,
+      ") differs from requested version (",
+      version,
+      ")"
+    )
   }
 
   # Extract data
@@ -82,35 +88,55 @@ import_spiges_xml <- function(data_file, id_file, version = "1.4") {
       )
 
       # Extract administrative data
-      admin_node <- xml2::xml_find_first(case_node, ".//d:Administratives", c(d = data_ns_uri))
+      admin_node <- xml2::xml_find_first(
+        case_node,
+        ".//d:Administratives",
+        c(d = data_ns_uri)
+      )
       if (!is.na(admin_node)) {
         admin_attrs <- xml2::xml_attrs(admin_node)
         case$administrative <- as.list(admin_attrs)
       }
 
       # Extract newborn data
-      newborn_node <- xml2::xml_find_first(case_node, ".//d:Neugeborene", c(d = data_ns_uri))
+      newborn_node <- xml2::xml_find_first(
+        case_node,
+        ".//d:Neugeborene",
+        c(d = data_ns_uri)
+      )
       if (!is.na(newborn_node)) {
         newborn_attrs <- xml2::xml_attrs(newborn_node)
         case$newborn <- as.list(newborn_attrs)
       }
 
       # Extract psychiatric data
-      psych_node <- xml2::xml_find_first(case_node, ".//d:Psychiatrie", c(d = data_ns_uri))
+      psych_node <- xml2::xml_find_first(
+        case_node,
+        ".//d:Psychiatrie",
+        c(d = data_ns_uri)
+      )
       if (!is.na(psych_node)) {
         psych_attrs <- xml2::xml_attrs(psych_node)
         case$psychiatric <- as.list(psych_attrs)
       }
 
       # Extract cost data
-      cost_node <- xml2::xml_find_first(case_node, ".//d:KostentraegerFall", c(d = data_ns_uri))
+      cost_node <- xml2::xml_find_first(
+        case_node,
+        ".//d:KostentraegerFall",
+        c(d = data_ns_uri)
+      )
       if (!is.na(cost_node)) {
         cost_attrs <- xml2::xml_attrs(cost_node)
         case$costs <- as.list(cost_attrs)
       }
 
       # Extract diagnoses
-      diag_nodes <- xml2::xml_find_all(case_node, ".//d:Diagnose", c(d = data_ns_uri))
+      diag_nodes <- xml2::xml_find_all(
+        case_node,
+        ".//d:Diagnose",
+        c(d = data_ns_uri)
+      )
       if (length(diag_nodes) > 0) {
         diagnoses <- lapply(diag_nodes, function(node) {
           as.list(xml2::xml_attrs(node))
@@ -119,13 +145,21 @@ import_spiges_xml <- function(data_file, id_file, version = "1.4") {
       }
 
       # Extract treatments
-      treat_nodes <- xml2::xml_find_all(case_node, ".//d:Behandlung", c(d = data_ns_uri))
+      treat_nodes <- xml2::xml_find_all(
+        case_node,
+        ".//d:Behandlung",
+        c(d = data_ns_uri)
+      )
       if (length(treat_nodes) > 0) {
         treatments <- lapply(treat_nodes, function(node) {
           treatment <- as.list(xml2::xml_attrs(node))
 
           # Extract operators
-          op_nodes <- xml2::xml_find_all(node, ".//d:Operierende", c(d = data_ns_uri))
+          op_nodes <- xml2::xml_find_all(
+            node,
+            ".//d:Operierende",
+            c(d = data_ns_uri)
+          )
           if (length(op_nodes) > 0) {
             operators <- lapply(op_nodes, function(op_node) {
               as.list(xml2::xml_attrs(op_node))
@@ -139,7 +173,11 @@ import_spiges_xml <- function(data_file, id_file, version = "1.4") {
       }
 
       # Extract medications
-      med_nodes <- xml2::xml_find_all(case_node, ".//d:Medikament", c(d = data_ns_uri))
+      med_nodes <- xml2::xml_find_all(
+        case_node,
+        ".//d:Medikament",
+        c(d = data_ns_uri)
+      )
       if (length(med_nodes) > 0) {
         medications <- lapply(med_nodes, function(node) {
           as.list(xml2::xml_attrs(node))
@@ -148,7 +186,11 @@ import_spiges_xml <- function(data_file, id_file, version = "1.4") {
       }
 
       # Extract invoices
-      inv_nodes <- xml2::xml_find_all(case_node, ".//d:Rechnung", c(d = data_ns_uri))
+      inv_nodes <- xml2::xml_find_all(
+        case_node,
+        ".//d:Rechnung",
+        c(d = data_ns_uri)
+      )
       if (length(inv_nodes) > 0) {
         invoices <- lapply(inv_nodes, function(node) {
           as.list(xml2::xml_attrs(node))
@@ -157,7 +199,11 @@ import_spiges_xml <- function(data_file, id_file, version = "1.4") {
       }
 
       # Extract patient movements
-      mov_nodes <- xml2::xml_find_all(case_node, ".//d:Patientenbewegung", c(d = data_ns_uri))
+      mov_nodes <- xml2::xml_find_all(
+        case_node,
+        ".//d:Patientenbewegung",
+        c(d = data_ns_uri)
+      )
       if (length(mov_nodes) > 0) {
         movements <- lapply(mov_nodes, function(node) {
           as.list(xml2::xml_attrs(node))
@@ -166,7 +212,11 @@ import_spiges_xml <- function(data_file, id_file, version = "1.4") {
       }
 
       # Extract canton data
-      canton_node <- xml2::xml_find_first(case_node, ".//d:Kantonsdaten", c(d = data_ns_uri))
+      canton_node <- xml2::xml_find_first(
+        case_node,
+        ".//d:Kantonsdaten",
+        c(d = data_ns_uri)
+      )
       if (!is.na(canton_node)) {
         canton_attrs <- xml2::xml_attrs(canton_node)
         case$canton <- as.list(canton_attrs)
@@ -184,7 +234,11 @@ import_spiges_xml <- function(data_file, id_file, version = "1.4") {
     location_burnr <- xml2::xml_attr(location, "burnr")
 
     # Find all cost carriers for this location
-    cost_nodes <- xml2::xml_find_all(location, ".//d:KostentraegerStandort", c(d = data_ns_uri))
+    cost_nodes <- xml2::xml_find_all(
+      location,
+      ".//d:KostentraegerStandort",
+      c(d = data_ns_uri)
+    )
 
     for (cost_idx in seq_along(cost_nodes)) {
       cost_node <- cost_nodes[[cost_idx]]
@@ -198,7 +252,11 @@ import_spiges_xml <- function(data_file, id_file, version = "1.4") {
   }
 
   # Extract enterprise cost carriers
-  ent_cost_nodes <- xml2::xml_find_all(data_xml, "//d:KostentraegerUnternehmen", c(d = data_ns_uri))
+  ent_cost_nodes <- xml2::xml_find_all(
+    data_xml,
+    "//d:KostentraegerUnternehmen",
+    c(d = data_ns_uri)
+  )
   ent_cost_carriers <- lapply(ent_cost_nodes, function(node) {
     as.list(xml2::xml_attrs(node))
   })
@@ -225,7 +283,11 @@ import_spiges_xml <- function(data_file, id_file, version = "1.4") {
       case_id <- xml2::xml_attr(id_case_node, "fall_id")
 
       # Extract person identifiers
-      person_node <- xml2::xml_find_first(id_case_node, ".//i:Personenidentifikatoren", c(i = id_ns_uri))
+      person_node <- xml2::xml_find_first(
+        id_case_node,
+        ".//i:Personenidentifikatoren",
+        c(i = id_ns_uri)
+      )
       if (!is.na(person_node)) {
         person_attrs <- xml2::xml_attrs(person_node)
 
@@ -300,7 +362,11 @@ import_spiges_csv <- function(directory, version = "1.4") {
   read_csv_if_exists <- function(file_name) {
     file_path <- file.path(directory, file_name)
     if (file.exists(file_path)) {
-      data <- utils::read.csv(file_path, stringsAsFactors = FALSE, na.strings = c("", "NA"))
+      data <- utils::read.csv(
+        file_path,
+        stringsAsFactors = FALSE,
+        na.strings = c("", "NA")
+      )
       return(data)
     } else {
       warning("File not found: ", file_name)
@@ -323,7 +389,9 @@ import_spiges_csv <- function(directory, version = "1.4") {
 
   # Check if we have the minimum required data
   if (is.null(result$Administratives)) {
-    stop("Administrative data file (1_Administratives.csv) is required but was not found")
+    stop(
+      "Administrative data file (1_Administratives.csv) is required but was not found"
+    )
   }
 
   # Convert to appropriate formats

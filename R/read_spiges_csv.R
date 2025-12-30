@@ -5,16 +5,13 @@
 #'   are read.
 #' @param col_types Optional \code{readr::cols_only()} object that is used as
 #'   \code{col_types} for all tables (overrides table-specific col_types).
-#' @param version = '1.4' SpiGes Version}.
+#' @param version = '1.4' SpiGes Version.
 #'
 #' @return A list with the requested tables (always containing \code{admin}),
 #'   with attributes \code{Datenjahr}, \code{Datenversion}, \code{Source}.
 #'
-#' @importFrom dplyr if_else select mutate coalesce
-#' @importFrom tibble tibble enframe
-#'
 #' @export
-read_bfs_spiges <- function(
+read_spiges_csv <- function(
   dirname,
   tables = NULL,
   col_types = NULL,
