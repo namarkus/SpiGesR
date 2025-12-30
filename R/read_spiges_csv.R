@@ -292,6 +292,16 @@ read_spiges_csv_files <- function(
   # Prefer vroom for speed; fall back to readr if vroom isn't installed.
   use_vroom <- requireNamespace("vroom", quietly = TRUE)
 
+  # Ensure the Administratives table is processed first so we can build a
+  # fall_id lookup map once and reuse it for all other tables.
+  selected_files <- selected_files[c(
+    "admin",
+    setdiff(names(selected_files), "admin")
+  )]
+  spiges_coltypes <- spiges_coltypes[names(selected_files)]
+
+  fall_id_map <- NULL
+
   for (tablenm in names(selected_files)) {
     # mapping for rename variables
     rename_map <- setNames(
@@ -341,23 +351,31 @@ read_spiges_csv_files <- function(
       dplyr::rename(!!!rename_map)
 
     # --- add unique ID (compact xxhash64 key) ----------------------------
-    spiges_csv <- spiges_csv |>
-      dplyr::mutate(
-        fall_id = paste(
-          jahr,
-          ent_id,
-          standort_id,
-          fall_id_spital,
-          sep = "|"
-        )
-      )
-
-    spiges_csv$fall_id <- vapply(
-      spiges_csv$fall_id,
-      digest::digest,
-      character(1),
-      algo = "xxhash64"
+    key <- with(
+      spiges_csv,
+      paste(jahr, ent_id, standort_id, fall_id_spital, sep = "|")
     )
+
+    dup_idx <- integer(0)
+    if (tablenm == 'admin') {
+      # Record duplicate keys (ignore them for mapping purposes, i.e. keep first)
+      dup_idx <- which(duplicated(key))
+
+      ukey <- key[!duplicated(key)]
+      fall_id <- vapply(ukey, digest::digest, character(1), algo = "xxhash64")
+      fall_id_map <- stats::setNames(fall_id, ukey)
+
+      spiges_csv$fall_id <- fall_id_map[key]
+    } else {
+      if (is.null(fall_id_map)) {
+        stop(
+          "Internal error: fall_id_map is not initialised. Ensure Administratives is read first.",
+          call. = FALSE
+        )
+      }
+
+      spiges_csv$fall_id <- fall_id_map[key]
+    }
 
     # get problems for read file
     csv_problems <- readr::problems(spiges_csv)
@@ -402,8 +420,48 @@ read_spiges_csv_files <- function(
       spiges_csv[[col_n]] <- int_value
     }
 
-    # attach combined problem
-    problems <- dplyr::bind_rows(csv_problems, int_problems)
+    # --- add join-key problems ------------------------------------------
+    dup_problems <- tibble::tibble(
+      row = integer(),
+      col = integer(),
+      expected = character(),
+      actual = character(),
+      file = character()
+    )
+    if (length(dup_idx) > 0L) {
+      dup_problems <- tibble::tibble(
+        row = dup_idx,
+        col = NA_integer_,
+        expected = "unique fall key",
+        actual = key[dup_idx],
+        file = tablenm
+      )
+    }
+
+    missing_idx <- which(is.na(spiges_csv$fall_id))
+    missing_problems <- tibble::tibble(
+      row = integer(),
+      col = integer(),
+      expected = character(),
+      actual = character(),
+      file = character()
+    )
+    if (tablenm != 'admin' && length(missing_idx) > 0L) {
+      missing_problems <- tibble::tibble(
+        row = missing_idx,
+        col = NA_integer_,
+        expected = "fall key present in Administratives",
+        actual = key[missing_idx],
+        file = tablenm
+      )
+    }
+
+    problems <- dplyr::bind_rows(
+      csv_problems,
+      int_problems,
+      dup_problems,
+      missing_problems
+    )
     attr(spiges_csv, "problems") <- problems
 
     spiges_data[[tablenm]] <- spiges_csv |>
