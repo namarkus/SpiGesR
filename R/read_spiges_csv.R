@@ -154,9 +154,7 @@ read_spiges_csv <- function(
   attr(spiges_data, "Sourcefromat") <- "CSV"
   attr(spiges_data, "Version") <- version
 
-  class(spiges_data) <- c("spiges_data", class(spiges_data))
-
-  spiges_data
+  new_spiges_data(spiges_data)
 }
 
 
@@ -291,17 +289,8 @@ read_spiges_csv_files <- function(
   spiges_data <- vector(mode = 'list', length = length(selected_files))
   names(spiges_data) <- names(selected_files)
 
-  # Try to create a progress bar (uses progress package if installed).
-  use_pb <- FALSE
-  if (requireNamespace("progress", quietly = TRUE)) {
-    pb <- progress::progress_bar$new(
-      format = "  Reading SpiGes files :file [:bar] :current/:total (:eta)",
-      total = length(selected_files),
-      clear = FALSE,
-      show_after = 0
-    )
-    use_pb <- TRUE
-  }
+  # Prefer vroom for speed; fall back to readr if vroom isn't installed.
+  use_vroom <- requireNamespace("vroom", quietly = TRUE)
 
   for (tablenm in names(selected_files)) {
     # mapping for rename variables
@@ -310,29 +299,48 @@ read_spiges_csv_files <- function(
       spiges_coltypes[[tablenm]]$canonical
     )
 
-    # build readr::cols object
+    # build readr::cols object (also accepted by vroom)
     col_name <- spiges_coltypes[[tablenm]]$fileheader
     col_type <- spiges_coltypes[[tablenm]]$col_spec
 
     cols_obj <- readr::cols(.default = readr::col_skip())
     cols_obj$cols <- stats::setNames(col_type, col_name)
 
-    # read csv file
-    spiges_csv <-
-      readr::read_delim(
-        file = file.path(dirname, selected_files[[tablenm]]),
-        delim = ",",
-        col_names = TRUE,
-        col_types = cols_obj,
-        quote = '"',
-        na = c("", " "),
-        locale = readr::locale(encoding = "UTF-8"),
-        show_col_types = FALSE
-      ) |>
-      suppressWarnings() |>
+    fpath <- file.path(dirname, selected_files[[tablenm]])
+
+    # --- read csv file ---------------------------------------------------
+    spiges_csv <- if (use_vroom) {
+      suppressWarnings(
+        vroom::vroom(
+          file = fpath,
+          delim = ",",
+          col_names = TRUE,
+          col_types = cols_obj,
+          quote = "\"",
+          na = c("", " "),
+          locale = readr::locale(encoding = "UTF-8")
+          # progress: vroom default is fine
+        )
+      )
+    } else {
+      suppressWarnings(
+        readr::read_delim(
+          file = fpath,
+          delim = ",",
+          col_names = TRUE,
+          col_types = cols_obj,
+          quote = '"',
+          na = c("", " "),
+          locale = readr::locale(encoding = "UTF-8"),
+          show_col_types = FALSE
+        )
+      )
+    }
+
+    spiges_csv <- spiges_csv |>
       dplyr::rename(!!!rename_map)
 
-    # --- add unique ID (compact xxhash64 key)
+    # --- add unique ID (compact xxhash64 key) ----------------------------
     spiges_csv <- spiges_csv |>
       dplyr::mutate(
         fall_id = paste(
@@ -344,14 +352,17 @@ read_spiges_csv_files <- function(
         )
       )
 
-    spiges_csv$fall_id = sapply(spiges_csv$fall_id, function(x) {
-      digest::digest(x, algo = 'xxhash64')
-    })
+    spiges_csv$fall_id <- vapply(
+      spiges_csv$fall_id,
+      digest::digest,
+      character(1),
+      algo = "xxhash64"
+    )
 
     # get problems for read file
     csv_problems <- readr::problems(spiges_csv)
 
-    # prepe int conversion problems
+    # prepare int conversion problems
     int_problems <- tibble::tibble(
       row = integer(),
       col = integer(),
@@ -370,7 +381,6 @@ read_spiges_csv_files <- function(
           col_value >= -.Machine$integer.max - 1 &
           col_value <= .Machine$integer.max)
 
-      # --- Problems sammeln -------------------------------------------
       bad_idx <- which(!value_is_int)
 
       if (length(bad_idx) > 0) {
@@ -386,13 +396,13 @@ read_spiges_csv_files <- function(
         )
       }
 
-      # --- Konvertieren -----------------------------------------------
+      # --- convert -------------------------------------------------------
       int_value <- as.integer(round(col_value[value_is_int]))
       int_value[!value_is_int] <- NA_integer_
       spiges_csv[[col_n]] <- int_value
     }
 
-    # attach combined problems to the resulting data.frame (keeps same structure as readr::problems())
+    # attach combined problem
     problems <- dplyr::bind_rows(csv_problems, int_problems)
     attr(spiges_csv, "problems") <- problems
 
@@ -400,10 +410,5 @@ read_spiges_csv_files <- function(
       dplyr::relocate(fall_id, .after = jahr)
   }
 
-  # advance progress bar after the file was processed
-  if (use_pb) {
-    pb$tick(tokens = list(file = basename(selected_files[[tablenm]])))
-  }
-
-  return(spiges_data)
+  spiges_data
 }
