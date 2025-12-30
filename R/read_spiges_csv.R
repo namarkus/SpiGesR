@@ -135,7 +135,11 @@ read_spiges_csv <- function(
   )
 
   # --- read csv files ----------------------------------------------------
-  spiges_data <- read_spiges_csv(dirname, selected_files, spiges_col_types)
+  spiges_data <- read_spiges_csv_files(
+    dirname,
+    selected_files,
+    spiges_col_types
+  )
 
   # --- Metadata attributes -----------------------------------------------
   if (nrow(spiges_data$admin) > 0L && "jahr" %in% names(spiges_data$admin)) {
@@ -279,7 +283,7 @@ make_coltypes <- function(spiges_tablecolumns, fileheaders, col_types) {
 #
 # @keywords internal
 # @noRd
-read_spiges_csv <- function(
+read_spiges_csv_files <- function(
   dirname,
   selected_files,
   spiges_coltypes
