@@ -1,7 +1,7 @@
 Package: SpiGesR
 Type: Package
 Title: Swiss inpatient hospital data (SpiGes) Import, Export and Analytic Tools
-Version: 0.1.7
+Version: 0.1.8
 Authors@R: c(
     person(
       "Markus", "Näpflin",
@@ -22,5 +22,6 @@ Config/testthat/edition: 3
 Depends: 
     R (>= 3.5)
 Imports:
-    dplyr (>= 1.1.0)
+    dplyr (>= 1.1.0),
+    readr (>= 2.1.0)
 RoxygenNote: 7.3.3
