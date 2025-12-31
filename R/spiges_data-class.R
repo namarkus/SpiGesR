@@ -31,3 +31,30 @@ validate_spiges_data <- function(x) {
   )
   x
 }
+
+#' Extract parsing and key problems from spiges_data
+#'
+#' @param x A spiges_data object
+#' @param ... unused
+#'
+#' @export
+problems.spiges_data <- function(x, ...) {
+  stopifnot(is.list(x))
+
+  res <- lapply(names(x), function(nm) {
+    p <- attr(x[[nm]], "problems", exact = TRUE)
+    if (is.null(p) || nrow(p) == 0L) {
+      return(NULL)
+    }
+    p$table <- nm
+    p
+  })
+
+  res <- res[!vapply(res, is.null, logical(1))]
+
+  if (length(res) == 0L) {
+    return(tibble::tibble())
+  }
+
+  dplyr::bind_rows(res)
+}

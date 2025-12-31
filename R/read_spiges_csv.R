@@ -141,6 +141,17 @@ read_spiges_csv <- function(
     spiges_col_types
   )
 
+  # --- check for problems and disply if any ----------------------------------------------------
+  all_problems <- readr::problems(spiges_data)
+
+  if (nrow(all_problems) > 0L) {
+    cli::cli_inform(c(
+      "i" = "{nrow(all_problems)} problems detected while reading SpiGes data.",
+      "i" = "Use {.fn problems}() to inspect them, e.g.",
+      ">" = "problems(x) or problems(x$admin)"
+    ))
+  }
+
   # --- Metadata attributes -----------------------------------------------
   if (nrow(spiges_data$admin) > 0L && "jahr" %in% names(spiges_data$admin)) {
     Datenjahr <- spiges_data$admin$jahr[1]
@@ -300,6 +311,8 @@ read_spiges_csv_files <- function(
   )]
   spiges_coltypes <- spiges_coltypes[names(selected_files)]
 
+  # prepare key creation
+  key_cols <- c("jahr", "ent_id", "standort_id", "fall_id_spital")
   fall_id_map <- NULL
 
   for (tablenm in names(selected_files)) {
@@ -350,13 +363,13 @@ read_spiges_csv_files <- function(
     spiges_csv <- spiges_csv |>
       dplyr::rename(!!!rename_map)
 
-    # --- add unique ID (compact xxhash64 key) ----------------------------
-    key <- with(
-      spiges_csv,
-      paste(jahr, ent_id, standort_id, fall_id_spital, sep = "|")
+    # --- create unique key ----------------------------
+    key <- do.call(
+      paste,
+      c(spiges_csv[key_cols], sep = "|")
     )
 
-    dup_idx <- integer(0)
+    dup_idx <- integer(0) # for duplicate checks
     if (tablenm == 'admin') {
       # Record duplicate keys (ignore them for mapping purposes, i.e. keep first)
       dup_idx <- which(duplicated(key))
@@ -390,14 +403,31 @@ read_spiges_csv_files <- function(
 
     # --- convert numeric columns that are integer-like back to integer ----
     int_col_nr <- which(spiges_coltypes[[tablenm]]$type == 'integer')
+    int_col_names <- spiges_coltypes[[tablenm]]$canonical[int_col_nr]
 
-    for (col_n in int_col_nr) {
-      col_value <- spiges_csv[[col_n]]
-      value_is_int <- is.na(col_value) |
-        (is.finite(col_value) &
-          abs(col_value - round(col_value)) <= 1e-8 &
-          col_value >= -.Machine$integer.max - 1 &
-          col_value <= .Machine$integer.max)
+    for (col_name in int_col_names) {
+      # skip if the canonical column is not present in the read data
+      if (!col_name %in% names(spiges_csv)) {
+        warning(
+          "Expected integer column '",
+          col_name,
+          "' not found in table ",
+          tablenm,
+          call. = FALSE
+        )
+        next
+      }
+
+      col_value_raw <- spiges_csv[[col_name]]
+
+      # attempt numeric coercion (suppress warnings for coercion)
+      col_value_num <- suppressWarnings(as.numeric(col_value_raw))
+
+      value_is_int <- is.na(col_value_num) |
+        (is.finite(col_value_num) &
+          abs(col_value_num - round(col_value_num)) <= 1e-8 &
+          col_value_num >= -.Machine$integer.max - 1 &
+          col_value_num <= .Machine$integer.max)
 
       bad_idx <- which(!value_is_int)
 
@@ -406,18 +436,19 @@ read_spiges_csv_files <- function(
           int_problems,
           tibble::tibble(
             row = bad_idx,
-            col = col_n,
+            col = which(names(spiges_csv) == col_name),
             expected = "an integer",
-            actual = as.character(col_value[bad_idx]),
+            actual = as.character(col_value_raw[bad_idx]),
             file = tablenm
           )
         )
       }
 
       # --- convert -------------------------------------------------------
-      int_value <- as.integer(round(col_value[value_is_int]))
+      int_value <- integer(length(col_value_num))
+      int_value[value_is_int] <- as.integer(round(col_value_num[value_is_int]))
       int_value[!value_is_int] <- NA_integer_
-      spiges_csv[[col_n]] <- int_value
+      spiges_csv[[col_name]] <- int_value
     }
 
     # --- add join-key problems ------------------------------------------
