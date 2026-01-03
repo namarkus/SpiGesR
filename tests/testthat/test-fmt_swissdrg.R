@@ -1,10 +1,121 @@
+test_that("fmt_swissdrg_admin admin formats correctly", {
+  admin <- tibble::tibble(
+    fall_id = 111L,
+    alter = 45L,
+    alter_U1 = 0L,
+    geschlecht = 1L,
+    eintrittsdatum = "2025010113",
+    eintritt_aufenthalt = 1L,
+    eintrittsart = 1L,
+    austrittsdatum = "2025010509",
+    austrittsentscheid = 1L,
+    austritt_aufenthalt = 1L,
+    beatmung = 0L
+  )
+
+  res <- fmt_swissdrg_admin(admin)
+  expect_equal(unique(sapply(res[-1], class)), 'character')
+
+  expect_equal(
+    paste(as.character(res[1, -1]), collapse = ';'),
+    "111;45;;M;20250101;01;20250105;00;0"
+  )
+})
+
+test_that("fmt_swissdrg_admin age formats correctly", {
+  admin <- tibble::tibble(
+    fall_id = c(111L, 112L, 113L, 114L, 115L, 116L, 117L),
+    alter = c(45L, 45L, 45L, NA_integer_, 0, 45L, 45),
+    alter_U1 = c(NA_integer_, 0, 1L, 1L, 1L, 1L, 1L),
+    geschlecht = 1L,
+    eintrittsdatum = "2025010113",
+    eintritt_aufenthalt = 1L,
+    eintrittsart = 1L,
+    austrittsdatum = "2025010509",
+    austrittsentscheid = 1L,
+    austritt_aufenthalt = 1L,
+    beatmung = NA_real_
+  )
+
+  res <- fmt_swissdrg_admin(admin)
+
+  expect_equal(res$age[1:3], c('45', '45', ''))
+  expect_equal(res$age_days[4:6], c('1', '1', ''))
+  expect_equal(res$age[7], "45")
+  expect_equal(res$age_days[7], "")
+})
+
+test_that("fmt_swissdrg_admin admission type formats correctly", {
+  admin <- tibble::tibble(
+    fall_id = 111:114,
+    alter = 30L,
+    alter_U1 = NA_integer_,
+    geschlecht = 1L,
+    eintrittsdatum = "2025031513",
+    eintrittsart = c(5L),
+    eintritt_aufenthalt = c(6L),
+    austrittsdatum = "2025032009",
+    austrittsentscheid = c(2L),
+    austritt_aufenthalt = c(6L),
+    beatmung = 0L
+  )
+
+  res <- fmt_swissdrg_admin(admin)
+
+  expect_equal(res$adm_mode[1], "06") # eintritt_aufenthalt == 6L & eintrittsart == 5L
+  expect_equal(res$exit_mode[1], "06") # austrittsentscheid != 5L & austritt_aufenthalt == 6L
+})
+
+test_that("fmt_swissdrg_admin dates format correctly", {
+  admin <- tibble::tibble(
+    fall_id = 111L,
+    alter = 30L,
+    alter_U1 = NA_integer_,
+    geschlecht = 1L,
+    eintrittsdatum = NA_character_,
+    eintrittsart = c(5L),
+    eintritt_aufenthalt = c(6L),
+    austrittsdatum = NA_character_,
+    austrittsentscheid = c(2L),
+    austritt_aufenthalt = c(6L),
+    beatmung = 0L
+  )
+
+  res <- fmt_swissdrg_admin(admin)
+  expect_equal(res$adm_date[1], '')
+  expect_equal(res$exit_date[1], '')
+
+  admin$eintrittsdatum = '2025031513'
+  admin$austrittsdatum = '2025032009'
+  res <- fmt_swissdrg_admin(admin)
+  expect_equal(res$adm_date[1], '20250315')
+  expect_equal(res$exit_date[1], '20250320')
+
+  admin$eintrittsdatum = as.Date('2025-03-15')
+  admin$austrittsdatum = as.Date('2025-03-20')
+  res <- fmt_swissdrg_admin(admin)
+  expect_equal(res$adm_date[1], '20250315')
+  expect_equal(res$exit_date[1], '20250320')
+
+  admin$eintrittsdatum = as.POSIXct('2025-03-15 13:00:00')
+  admin$austrittsdatum = as.POSIXct('2025-03-20 09:00:00')
+  res <- fmt_swissdrg_admin(admin)
+  expect_equal(res$adm_date[1], '20250315')
+  expect_equal(res$exit_date[1], '20250320')
+})
+
+
 test_that("fmt_swissdrg_babydata checks vars", {
-  admin <- tibble(fall_id = 1L, aufnahmegewicht = 1L)
-  neugeb <- tibble(fall_id = 1L, gestationsalter1 = 1L, gestationsalter2 = 1L)
+  admin <- tibble::tibble(fall_id = 1L, aufnahmegewicht = 1L)
+  neugeb <- tibble::tibble(
+    fall_id = 1L,
+    gestationsalter1 = 1L,
+    gestationsalter2 = 1L
+  )
   expect_warning(fmt_swissdrg_babydata(admin, neugeb))
 
-  admin <- tibble(fall_id = 1L)
-  neugeb <- tibble(
+  admin <- tibble::tibble(fall_id = 1L)
+  neugeb <- tibble::tibble(
     fall_id = 1L,
     geburtsgewicht = 1L,
     gestationsalter1 = 1L,
@@ -12,21 +123,33 @@ test_that("fmt_swissdrg_babydata checks vars", {
   )
   expect_warning(fmt_swissdrg_babydata(admin, neugeb))
 
-  admin <- tibble(fall_id = 1L, aufnahmegewicht = 1L)
-  neugeb <- tibble(fall_id = 1L, geburtsgewicht = 1L, gestationsalter2 = 1L)
+  admin <- tibble::tibble(fall_id = 1L, aufnahmegewicht = 1L)
+  neugeb <- tibble::tibble(
+    fall_id = 1L,
+    geburtsgewicht = 1L,
+    gestationsalter2 = 1L
+  )
   expect_warning(fmt_swissdrg_babydata(admin, neugeb))
 
-  admin <- tibble(fall_id = 1L, aufnahmegewicht = 1L)
-  neugeb <- tibble(fall_id = 1L, geburtsgewicht = 1L, gestationsalter2 = 1L)
+  admin <- tibble::tibble(fall_id = 1L, aufnahmegewicht = 1L)
+  neugeb <- tibble::tibble(
+    fall_id = 1L,
+    geburtsgewicht = 1L,
+    gestationsalter2 = 1L
+  )
   expect_warning(fmt_swissdrg_babydata(admin, neugeb))
 
-  admin <- tibble(fall_id = 1L)
-  neugeb <- tibble(fall_id = 1L, gestationsalter1 = 1L, gestationsalter2 = 1L)
+  admin <- tibble::tibble(fall_id = 1L)
+  neugeb <- tibble::tibble(
+    fall_id = 1L,
+    gestationsalter1 = 1L,
+    gestationsalter2 = 1L
+  )
   expect_error(fmt_swissdrg_babydata(admin, neugeb))
 
-  admin <- tibble(fall_id = 1L, aufnahmegewicht = 1L)
-  neugeb <- tibble(fall_id = 1L, geburtsgewicht = 1L)
-  expect_erro(fmt_swissdrg_babydata(admin, neugeb))
+  admin <- tibble::tibble(fall_id = 1L, aufnahmegewicht = 1L)
+  neugeb <- tibble::tibble(fall_id = 1L, geburtsgewicht = 1L)
+  expect_error(fmt_swissdrg_babydata(admin, neugeb))
 })
 
 test_that("fmt_swissdrg_babydata works", {

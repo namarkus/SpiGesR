@@ -118,10 +118,10 @@ fmt_swissdrg_admin <- function(admin) {
     dplyr::mutate(
       ID = fall_id,
       patient_id = as.character(fall_id),
-      age = dplyr::if_else(
-        !is.na(alter_U1) & alter_U1 > 0,
-        '',
-        as.character(alter)
+      age = dplyr::case_when(
+        !is.na(alter) & alter > 0L ~ as.character(alter),
+        !is.na(alter_U1) & alter_U1 > 0 ~ '',
+        .default = as.character(alter)
       ),
       age_days = dplyr::if_else(
         !is.na(alter) & alter > 0,
@@ -129,14 +129,28 @@ fmt_swissdrg_admin <- function(admin) {
         as.character(alter_U1)
       ),
       sex = dplyr::case_match(geschlecht, 1 ~ 'M', 2 ~ 'W', .default = ''),
-      adm_date = substr(eintrittsdatum, 1, 8),
+      adm_date = dplyr::case_when(
+        inherits(eintrittsdatum, c("Date", "POSIXt")) ~ format(
+          eintrittsdatum,
+          format = "%Y%m%d"
+        ),
+        !is.na(eintrittsdatum) ~ substr(as.character(eintrittsdatum), 1, 8),
+        .default = ''
+      ),
       adm_mode = dplyr::case_when(
         eintrittsart == 3L ~ '01',
         eintritt_aufenthalt == 6L & eintrittsart != 5L ~ '11',
         eintritt_aufenthalt == 6L & eintrittsart == 5L ~ '06',
         eintritt_aufenthalt != 6L ~ '01'
       ),
-      exit_date = substr(austrittsdatum, 1, 8),
+      exit_date = dplyr::case_when(
+        inherits(austrittsdatum, c("Date", "POSIXt")) ~ format(
+          austrittsdatum,
+          format = "%Y%m%d"
+        ),
+        !is.na(austrittsdatum) ~ substr(as.character(austrittsdatum), 1, 8),
+        .default = ''
+      ),
       exit_mode = dplyr::case_when(
         austrittsentscheid == 5L ~ '07',
         austrittsentscheid != 5L & austritt_aufenthalt == 6L ~ '06',
