@@ -5,19 +5,21 @@ test_that("admin only can be read", {
 
   spiges_coltypes = list(
     admin = tibble::tribble(
-      ~fileheader   , ~canonical       , ~type       , ~col_spec              , ~anon_fg , ~user_col_fg ,
-      'JAHR'        , 'jahr'           , 'integer'   , readr::col_double()    , FALSE    , FALSE        ,
-      'ENT_ID'      , 'ent_id'         , 'character' , readr::col_character() , FALSE    , FALSE        ,
-      'STANDORT_ID' , 'standort_id'    , 'character' , readr::col_character() , FALSE    , FALSE        ,
-      'FALL_ID'     , 'fall_id_spital' , 'character' , readr::col_character() , FALSE    , FALSE        ,
-      'GESCHLECHT'  , 'geschlecht'     , 'character' , readr::col_character() , FALSE    , FALSE        ,
-      'ALTER'       , 'alter'          , 'integer'   , readr::col_double()    , FALSE    , FALSE
+      ~fileheader  , ~canonical       , ~type       , ~col_spec              , ~anon_fg , ~user_col_fg ,
+      'JAHR'       , 'jahr'           , 'integer'   , readr::col_double()    , FALSE    , FALSE        ,
+      'ENT_ID'     , 'ent_id'         , 'character' , readr::col_character() , FALSE    , FALSE        ,
+      'BURNR'      , 'standort_id'    , 'character' , readr::col_character() , FALSE    , FALSE        ,
+      'FALL_ID'    , 'fall_id_spital' , 'character' , readr::col_character() , FALSE    , FALSE        ,
+      'GESCHLECHT' , 'geschlecht'     , 'character' , readr::col_character() , FALSE    , FALSE        ,
+      'ALTER'      , 'alter'          , 'integer'   , readr::col_double()    , FALSE    , FALSE
     )
   )
 
   out <- read_spiges_csv_files(dirname, selected_files, spiges_coltypes)
 
+  expect_length(out, 1)
   expect_named(out, c("admin"))
+  expect_shape(out$admin, nrow = 3)
   expect_true("fall_id" %in% names(out$admin))
   expect_identical(names(out$admin)[2], "fall_id")
 })

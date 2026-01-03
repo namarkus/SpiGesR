@@ -4,7 +4,7 @@
 \alias{filter.spiges_data}
 \title{Filter spiges_data by admin table}
 \usage{
-\method{filter}{spiges_data}(.data, ...)
+filter.spiges_data(.data, ...)
 }
 \arguments{
 \item{.data}{A data frame, data frame extension (e.g. a tibble), or a
