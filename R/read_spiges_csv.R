@@ -159,13 +159,15 @@ read_spiges_csv <- function(
     Datenjahr <- NA
   }
 
-  attr(spiges_data, "Datenjahr") <- Datenjahr
-  attr(spiges_data, "Datenversion") <- Datenversion
-  attr(spiges_data, "Source") <- "SpiGes"
-  attr(spiges_data, "Sourcefromat") <- "CSV"
-  attr(spiges_data, "Version") <- version
-
-  new_spiges_data(spiges_data)
+  spiges_data <- spiges_set_meta(
+    spiges_data,
+    Datenjahr = Datenjahr,
+    Datenversion = Datenversion,
+    Source = "SpiGes",
+    Sourceformat = 'CSV',
+    Version = version
+  )
+  spiges_data
 }
 
 
@@ -299,6 +301,7 @@ read_spiges_csv_files <- function(
 ) {
   spiges_data <- vector(mode = 'list', length = length(selected_files))
   names(spiges_data) <- names(selected_files)
+  spiges_data <- new_spiges_data(spiges_data)
 
   # Prefer vroom for speed; fall back to readr if vroom isn't installed.
   use_vroom <- requireNamespace("vroom", quietly = TRUE)
@@ -487,16 +490,17 @@ read_spiges_csv_files <- function(
       )
     }
 
-    problems <- dplyr::bind_rows(
+    file_problems <- dplyr::bind_rows(
       csv_problems,
       int_problems,
       dup_problems,
       missing_problems
     )
-    attr(spiges_csv, "problems") <- problems
 
-    spiges_data[[tablenm]] <- spiges_csv |>
-      dplyr::relocate(fall_id, .after = jahr)
+    spiges_csv_out <- spiges_csv |> dplyr::relocate(fall_id, .after = jahr)
+
+    spiges_data[[tablenm]] <- spiges_csv_out
+    spiges_data <- spiges_add_problems(spiges_data, file_problems)
   }
 
   spiges_data
