@@ -1,21 +1,22 @@
-#---- admin_neugeb_fmt_splg -------------------------------------------------
+#---- fmt_splg_admin_neugeb -------------------------------------------------
 
-test_that("admin_neugeb_fmt_splg errors on non-dataframe input or missing columns", {
-  expect_error(admin_neugeb_fmt_splg(c(1, 2, 3)))
-  expect_error(admin_neugeb_fmt_splg(data.frame(
+test_that("fmt_splg_admin_neugeb errors on non-dataframe input or missing columns", {
+  expect_error(fmt_splg_admin_neugeb(c(1, 2, 3)))
+  expect_error(fmt_splg_admin_neugeb(data.frame(
     fall_id = 1234,
     alter = 62
   )))
 })
 
 
-test_that("admin_neugeb_fmt_splg formats correctly", {
+test_that("fmt_splg_admin_neugeb formats correctly", {
   # Test data
   admin_test_data <-
     data.frame(
       fall_id = c(1234L, 5678L),
       spital_id = c(71291845L, 71234865L),
       plz = c(8001L, 6430L),
+      standort = c(1, 2),
       wohnkanton = c('ZH', 'LU'),
       abc_fall = rep('A', 2),
       tarif = rep(1L, 2),
@@ -30,14 +31,14 @@ test_that("admin_neugeb_fmt_splg formats correctly", {
     geburtsgewicht = NA
   )
 
-  result_text <- admin_neugeb_fmt_splg(
+  result_text <- fmt_splg_admin_neugeb(
     admin = admin_test_data,
     neugeb = neugeb_test_data,
     type = 'group',
     format = 'TEXT'
   )
-  # result_xml <- admin_neugeb_fmt_splg(admin_test_data, neugeb_test_data, type = 'group', format = 'XML')
-  result_json <- admin_neugeb_fmt_splg(
+  # result_xml <- fmt_splg_admin_neugeb(admin_test_data, neugeb_test_data, type = 'group', format = 'XML')
+  result_json <- fmt_splg_admin_neugeb(
     admin_test_data,
     neugeb_test_data,
     type = 'group',
@@ -55,11 +56,11 @@ test_that("admin_neugeb_fmt_splg formats correctly", {
   )
   # expect_equal(result_xml$admin[1], '')
   expect_equal(
-    result_json$admin[1],
-    '[{\"fallid\":5678,\"burnr\":71234865,\"agey\":63,\"austritt\":20241015}]'
+    result_json$admin[2],
+    '[{\"fallid\":"5678",\"burnr\":"71234865",\"agey\":"63",\"austritt\":"20241015"}]'
   )
 
-  expect_error(admin_neugeb_fmt_splg(
+  expect_error(fmt_splg_admin_neugeb(
     admin_test_data,
     neugeb_test_data,
     type = 'group',
@@ -68,14 +69,14 @@ test_that("admin_neugeb_fmt_splg formats correctly", {
 })
 
 
-#---- diag_fmt_splg -------------------------------------------------
-test_that("diag_fmt_splg errors on non-dataframe input or missing columns", {
-  expect_error(diag_fmt_splg(c(1, 2, 3)))
-  expect_error(diag_fmt_splg(data.frame(diagnose_id = 1, diagnose_kode = 'A')))
+#---- fmt_splg_diag -------------------------------------------------
+test_that("fmt_splg_diag errors on non-dataframe input or missing columns", {
+  expect_error(fmt_splg_diag(c(1, 2, 3)))
+  expect_error(fmt_splg_diag(data.frame(diagnose_id = 1, diagnose_kode = 'A')))
 })
 
 
-test_that("diag_fmt_splg format diagnoses correctly", {
+test_that("fmt_splg_diag format diagnoses correctly", {
   # Test data
   diag_test_data <-
     data.frame(
@@ -86,9 +87,9 @@ test_that("diag_fmt_splg format diagnoses correctly", {
       diagnose_zusatz = c('C99', NA)
     )
 
-  result_text <- diag_fmt_splg(diag_test_data, format = 'TEXT')
-  # result_xml <- diag_fmt_splg(diag_test_data, format = 'XML')
-  result_json <- diag_fmt_splg(diag_test_data, format = 'JSON')
+  result_text <- fmt_splg_diag(diag_test_data, format = 'TEXT')
+  # result_xml <- fmt_splg_diag(diag_test_data, format = 'XML')
+  result_json <- fmt_splg_diag(diag_test_data, format = 'JSON')
 
   # 3. Assertions
   expect_vector(result_text$diagnosen, ptype = character(), size = 1)
@@ -99,25 +100,25 @@ test_that("diag_fmt_splg format diagnoses correctly", {
   # expect_equal(result_xml$diagnosen, '<diagnose code="C541" zusatz="C99" rang="0"/>')
   expect_equal(
     result_json$diagnosen,
-    '[{"rang":1,"code":"C541","zusatz":"C99"},{"rang":2,"code":"K660"}]'
+    '[{"rang":"1","code":"C541","zusatz":"C99"},{"rang":"2","code":"K660"}]'
   )
 
-  expect_error(diag_fmt_splg(diag_test_data, format = 'XML'))
+  expect_error(fmt_splg_diag(diag_test_data, format = 'XML'))
 })
 
 
-#---- proc_fmt_splg -------------------------------------------------
+#---- fmt_splg_proc -------------------------------------------------
 
-test_that("proc_fmt_splg errors on non-dataframe input or missing columns", {
-  expect_error(proc_fmt_splg(c(1, 2, 3)))
-  expect_error(proc_fmt_splg(data.frame(
+test_that("fmt_splg_proc errors on non-dataframe input or missing columns", {
+  expect_error(fmt_splg_proc(c(1, 2, 3)))
+  expect_error(fmt_splg_proc(data.frame(
     behandlung_id = 1,
     behandlung_chop = 'A'
   )))
 })
 
 
-test_that("proc_fmt_splg format diagnoses correctly", {
+test_that("fmt_splg_proc format diagnoses correctly", {
   # Test data
   proc_test_data <-
     data.frame(
@@ -129,9 +130,9 @@ test_that("proc_fmt_splg format diagnoses correctly", {
       behandlung_auswaerts = NA_integer_
     )
 
-  result_text <- proc_fmt_splg(proc_test_data, format = 'TEXT')
-  # result_xml <- proc_fmt_splg(proc_test_data, format = 'XML')
-  result_json <- proc_fmt_splg(proc_test_data, format = 'JSON')
+  result_text <- fmt_splg_proc(proc_test_data, format = 'TEXT')
+  # result_xml <- fmt_splg_proc(proc_test_data, format = 'XML')
+  result_json <- fmt_splg_proc(proc_test_data, format = 'JSON')
 
   # 3. Assertions
   expect_vector(result_text$behandlungen, ptype = character(), size = 1)
@@ -140,15 +141,15 @@ test_that("proc_fmt_splg format diagnoses correctly", {
 
   expect_equal(
     result_text$behandlungen,
-    'CHOP 6861:::2018041915;6541:0::20180419'
+    'CHOP 6861:::20180419;6541:0::20180419'
   )
   # expect_equal(result_xml_group$diagnosen, '<diagnose code="C541" zusatz="C99" rang="0"/>')
   expect_equal(
     result_json$behandlungen,
-    '[{"rang":"1","code":"6861","seitigkeit":"","beginn":"2018041915","ambext":""},{"rang":"2","code":"6541","seitigkeit":"0","beginn":"20180419","ambext":""}]'
+    '[{"rang":"1","code":"6861","seitigkeit":"","beginn":"20180419","ambext":""},{"rang":"2","code":"6541","seitigkeit":"0","beginn":"20180419","ambext":""}]'
   )
 
-  expect_error(proc_fmt_splg(proc_test_data, format = 'XML'))
+  expect_error(fmt_splg_proc(proc_test_data, format = 'XML'))
 })
 
 #---- fmt_splg -------------------------------------------------
@@ -223,7 +224,7 @@ test_that("fmt_splg formats correctly", {
       'SPLG-INPUT',
       'fallid=1234;burnr=71291845;agey=34;austritt=20240331',
       'ICD ICD C541;C99;K660',
-      'CHOP CHOP 6861:::2018041915;6541:0::20180419',
+      'CHOP CHOP 6861:::20180419;6541:0::20180419',
       'fallid=5678;burnr=71234865;agey=63;austritt=20241015',
       'ICD ',
       'CHOP '
@@ -233,7 +234,7 @@ test_that("fmt_splg formats correctly", {
   # expect_equal(result_group_xml, '')
   expect_equal(
     result_group_json,
-    '{"splg-json":[{"fallid":1234,"burnr":71291845,"agey":34,"austritt":20240331,[{"rang":1,"code":"C541","zusatz":"C99"},{"rang":2,"code":"K660"}],[{"rang":"1","code":"6861","seitigkeit":"","beginn":"2018041915","ambext":""},{"rang":"2","code":"6541","seitigkeit":"0","beginn":"20180419","ambext":""}]},{"fallid":5678,"burnr":71234865,"agey":63,"austritt":20241015}]}'
+    '{"splg-json":[{"fallid":"1234","burnr":"71291845","agey":"34","austritt":"20240331",[{"rang":"1","code":"C541","zusatz":"C99"},{"rang":"2","code":"K660"}],[{"rang":"1","code":"6861","seitigkeit":"","beginn":"20180419","ambext":""},{"rang":"2","code":"6541","seitigkeit":"0","beginn":"20180419","ambext":""}]},{"fallid":"5678","burnr":"71234865","agey":"63","austritt":"20241015"}]}'
   )
 
   expect_error(fmt_splg(spiges_test_data, type = 'group', format = 'XML'))

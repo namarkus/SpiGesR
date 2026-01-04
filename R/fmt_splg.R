@@ -25,16 +25,16 @@ fmt_splg <- function(
   format = match.arg(format)
 
   # Check input
-  check_spiges_tables(spiges_data, cc('admin', 'neugeborene', 'diag', 'proc'))
+  check_spiges_tables(spiges_data, c('admin', 'neugeborene', 'diag', 'proc'))
 
   spiges_admin <- spiges_data$admin
   spiges_neugeb <- spiges_data$neugeborene |>
-    select(fall_id, gestationsalter2, geburtsgewicht)
+    dplyr::select(fall_id, gestationsalter2, geburtsgewicht)
   spiges_diag <- spiges_data$diag
   spiges_proc <- spiges_data$proc
 
   # format admin
-  splg_admin <- admin_neugeb_fmt_splg(
+  splg_admin <- fmt_splg_admin_neugeb(
     spiges_admin,
     spiges_neugeb,
     format = format,
@@ -43,10 +43,10 @@ fmt_splg <- function(
   )
 
   # format diags
-  splg_icd <- diag_fmt_splg(spiges_diag, format = format, version = version)
+  splg_icd <- fmt_splg_diag(spiges_diag, format = format, version = version)
 
   # format procs
-  splg_chop <- proc_fmt_splg(spiges_proc, format = format, version = version)
+  splg_chop <- fmt_splg_proc(spiges_proc, format = format, version = version)
 
   splg_combined <-
     splg_admin |>
@@ -94,7 +94,7 @@ fmt_splg <- function(
 }
 
 
-admin_neugeb_fmt_splg <- function(
+fmt_splg_admin_neugeb <- function(
   admin,
   neugeb,
   format,
@@ -154,6 +154,10 @@ admin_neugeb_fmt_splg <- function(
 
   splg_admin <-
     admin %>%
+    dplyr::mutate(
+      austritt = spiges2datestr(austrittsdatum),
+      austritt = dplyr::if_else(austritt == '', NA_character_, austritt)
+    ) |>
     dplyr::left_join(neugeb, by = 'fall_id') %>%
     dplyr::select(
       ID = fall_id,
@@ -164,7 +168,7 @@ admin_neugeb_fmt_splg <- function(
       ssw = gestationsalter2,
       ggw = geburtsgewicht,
       dmb = beatmung,
-      austritt = austrittsdatum
+      austritt
     )
 
   if (type %in% c('control', 'output')) {
@@ -174,7 +178,7 @@ admin_neugeb_fmt_splg <- function(
         ID = fall_id,
         burnr = spital_id,
         plz = plz,
-        stanort = standort,
+        standort = standort,
         wohnkanton = wohnkanton,
         falltyp = paste0('abc_fall', ':3:', tarif)
       )
@@ -203,7 +207,7 @@ admin_neugeb_fmt_splg <- function(
     if (format == 'TEXT') {
       splg_admin_in <-
         splg_admin |>
-        mutate(across(
+        dplyr::mutate(dplyr::across(
           -ID,
           ~ dplyr::if_else(
             is.na(.x),
@@ -217,6 +221,7 @@ admin_neugeb_fmt_splg <- function(
     } else if (format == 'JSON') {
       splg_admin_in <-
         splg_admin |>
+        dplyr::mutate(dplyr::across(-ID, as.character)) |>
         tidyr::nest(json_data = -ID) |>
         dplyr::mutate(
           admin = purrr::map_chr(json_data, jsonlite::toJSON)
@@ -228,7 +233,7 @@ admin_neugeb_fmt_splg <- function(
 }
 
 
-diag_fmt_splg <- function(
+fmt_splg_diag <- function(
   diag,
   format = c('TEXT', 'XML', 'JSON'),
   version = '1.4'
@@ -308,6 +313,7 @@ diag_fmt_splg <- function(
       #     dplyr::select(ID, diagnosen)
       # }
       splg_diag_in <- splg_diag |>
+        dplyr::mutate(dplyr::across(-ID, as.character)) |>
         tidyr::nest(json_data = c(rang, code, seitigkeit, zusatz)) |>
         dplyr::mutate(
           diagnosen = purrr::map_chr(json_data, jsonlite::toJSON)
@@ -320,7 +326,7 @@ diag_fmt_splg <- function(
 
 
 #' Internal: format procedure (CHOP) records for SPLG-Grouper input (supports TEXT and JSON outputs)
-proc_fmt_splg <- function(
+fmt_splg_proc <- function(
   proc,
   format = c('TEXT', 'XML', 'JSON'),
   version = '1.4'
@@ -344,12 +350,16 @@ proc_fmt_splg <- function(
   }
 
   splg_proc <- proc |>
+    dplyr::mutate(
+      beginn = spiges2datestr(behandlung_beginn),
+      beginn = dplyr::if_else(beginn == '', NA_character_, beginn)
+    ) |>
     dplyr::select(
       ID = fall_id,
       rang = behandlung_id,
       code = behandlung_chop,
       seitigkeit = behandlung_seitigkeit,
-      beginn = behandlung_beginn,
+      beginn,
       ambext = behandlung_auswaerts
     ) |>
     dplyr::mutate(across(
@@ -388,6 +398,7 @@ proc_fmt_splg <- function(
       stop('Format XML for SPLG-Grouper (proc) is not implemented yet.')
     } else if (format == 'JSON') {
       splg_proc_in <- splg_proc |>
+        dplyr::mutate(dplyr::across(-ID, as.character)) |>
         tidyr::nest(json_data = c(rang, code, seitigkeit, beginn, ambext)) |>
         dplyr::mutate(
           behandlungen = purrr::map_chr(json_data, jsonlite::toJSON)

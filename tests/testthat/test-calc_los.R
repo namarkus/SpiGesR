@@ -1,7 +1,8 @@
-test_that("multiplication works", {
+test_that("calculation of los works", {
   spiges_data = list(
     admin = data.frame(
       fall_id = c('AS1', 'AM1', 'AM2', 'CS1', 'CM1', 'ERR1'),
+      jahr = 2025L,
       eintrittsdatum = c(
         '20250201',
         '20250101',
@@ -36,11 +37,49 @@ test_that("multiplication works", {
 
   res <- calc_los(spiges_data)
 
-  expect_equal(
+  expect_identical(
     as.integer(res[
       res$fall_id == 'AS1',
       c('episodes', 'loc', 'los_drg', 'los_stre', 'los_tpsy')
     ]),
-    as.integer(c(0, 9, 9, 10, 10))
+    as.integer(c(1, 9, 9, 10, 10))
+  )
+
+  expect_identical(
+    as.integer(res[
+      res$fall_id == 'CS1',
+      c('episodes', 'loc', 'los_drg', 'los_stre', 'los_tpsy')
+    ]),
+    as.integer(c(1, 274, NA, NA, NA))
+  )
+
+  expect_identical(
+    as.integer(res[
+      res$fall_id == 'ERR1',
+      c('episodes', 'loc', 'los_drg', 'los_stre', 'los_tpsy')
+    ]),
+    as.integer(c(1, NA, NA, NA, NA))
+  )
+
+  expect_identical(
+    as.integer(res[
+      res$fall_id == 'AM1',
+      c('episodes', 'loc', 'los_drg', 'los_stre', 'los_tpsy')
+    ]),
+    as.integer(c(3, 10, 3, 6, 6))
+  )
+  expect_identical(
+    as.integer(res[
+      res$fall_id == 'AM2',
+      c('episodes', 'loc', 'los_drg', 'los_stre', 'los_tpsy')
+    ]),
+    as.integer(c(2, 10, 7, 9, 9))
+  )
+  expect_identical(
+    as.integer(res[
+      res$fall_id == 'CM1',
+      c('episodes', 'loc', 'los_drg', 'los_stre', 'los_tpsy')
+    ]),
+    as.integer(c(2, 244, NA, NA, NA))
   )
 })

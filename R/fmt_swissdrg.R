@@ -129,28 +129,14 @@ fmt_swissdrg_admin <- function(admin) {
         as.character(alter_U1)
       ),
       sex = dplyr::case_match(geschlecht, 1 ~ 'M', 2 ~ 'W', .default = ''),
-      adm_date = dplyr::case_when(
-        inherits(eintrittsdatum, c("Date", "POSIXt")) ~ format(
-          eintrittsdatum,
-          format = "%Y%m%d"
-        ),
-        !is.na(eintrittsdatum) ~ substr(as.character(eintrittsdatum), 1, 8),
-        .default = ''
-      ),
+      adm_date = spiges2datestr(eintrittsdatum),
       adm_mode = dplyr::case_when(
         eintrittsart == 3L ~ '01',
         eintritt_aufenthalt == 6L & eintrittsart != 5L ~ '11',
         eintritt_aufenthalt == 6L & eintrittsart == 5L ~ '06',
         eintritt_aufenthalt != 6L ~ '01'
       ),
-      exit_date = dplyr::case_when(
-        inherits(austrittsdatum, c("Date", "POSIXt")) ~ format(
-          austrittsdatum,
-          format = "%Y%m%d"
-        ),
-        !is.na(austrittsdatum) ~ substr(as.character(austrittsdatum), 1, 8),
-        .default = ''
-      ),
+      exit_date = spiges2datestr(austrittsdatum),
       exit_mode = dplyr::case_when(
         austrittsentscheid == 5L ~ '07',
         austrittsentscheid != 5L & austritt_aufenthalt == 6L ~ '06',
@@ -324,11 +310,7 @@ fmt_swissdrg_proc <- function(proc) {
         2 ~ 'L',
         .default = ''
       ),
-      beginn = dplyr::if_else(
-        is.na(behandlung_beginn),
-        '',
-        as.character(behandlung_beginn)
-      ),
+      beginn = spiges2datestr(behandlung_beginn),
       .keep = 'none'
     ) |>
     dplyr::mutate(procs = paste0(code, ':', seitigkeit, ':', beginn)) |>

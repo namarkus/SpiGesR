@@ -48,3 +48,45 @@ check_spiges_var <- function(spiges_table, var_names) {
 
   invisible(NULL)
 }
+
+#' coerce variable of different classes to Date (withour Hour)
+#'
+#' @param x vector to be coerced to SpiGes-Date
+#' @return vector fo class Date
+spiges2date <- function(x) {
+  spiges_date <- as.Date(rep(NA, length(x)))
+
+  if (inherits(x, 'POSIXt')) {
+    tz <- attr(x, "tzone")
+    if (is.null(tz) || tz == "") {
+      tz <- Sys.timezone()
+    }
+    spiges_date <- as.Date(x, tz = tz)
+  } else if (inherits(x, 'Date')) {
+    spiges_date <- x
+  } else if (inherits(x, c('character', 'integer', 'numeric'))) {
+    spiges_date <- as.Date(
+      substr(as.character(x), 1, 8),
+      format = '%Y%m%d'
+    )
+  }
+  spiges_date
+}
+
+#' coerce variable of different classes to character vector date string (withour Hour)
+#'
+#' @param x vector to be coerced to character (format SpiGes-Date)
+#' @return vector fo class character
+spiges2datestr <- function(x) {
+  spiges_chr <- character(length = length(x))
+
+  if (inherits(x, c('Date', 'POSIXt'))) {
+    spiges_chr <- format(x, format = '%Y%m%d')
+  } else if (inherits(x, c('character', 'integer', 'numeric'))) {
+    date_str = substr(as.character(x), 1, 8)
+    date_fmt = grepl('^\\d{8}$', date_str)
+
+    spiges_chr[date_fmt] <- date_str[date_fmt]
+  }
+  spiges_chr
+}

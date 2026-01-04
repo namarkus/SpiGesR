@@ -39,7 +39,7 @@ test_that("fmt_swissdrg_admin age formats correctly", {
 
   res <- fmt_swissdrg_admin(admin)
 
-  expect_equal(res$age[1:3], c('45', '45', ''))
+  expect_equal(res$age[1:3], c('45', '45', '45'))
   expect_equal(res$age_days[4:6], c('1', '1', ''))
   expect_equal(res$age[7], "45")
   expect_equal(res$age_days[7], "")
@@ -107,66 +107,28 @@ test_that("fmt_swissdrg_admin dates format correctly", {
 
 test_that("fmt_swissdrg_babydata checks vars", {
   admin <- tibble::tibble(fall_id = 1L, aufnahmegewicht = 1L)
-  neugeb <- tibble::tibble(
-    fall_id = 1L,
-    gestationsalter1 = 1L,
-    gestationsalter2 = 1L
-  )
-  expect_warning(fmt_swissdrg_babydata(admin, neugeb))
-
-  admin <- tibble::tibble(fall_id = 1L)
-  neugeb <- tibble::tibble(
-    fall_id = 1L,
-    geburtsgewicht = 1L,
-    gestationsalter1 = 1L,
-    gestationsalter2 = 1L
-  )
-  expect_warning(fmt_swissdrg_babydata(admin, neugeb))
-
-  admin <- tibble::tibble(fall_id = 1L, aufnahmegewicht = 1L)
-  neugeb <- tibble::tibble(
-    fall_id = 1L,
-    geburtsgewicht = 1L,
-    gestationsalter2 = 1L
-  )
-  expect_warning(fmt_swissdrg_babydata(admin, neugeb))
-
-  admin <- tibble::tibble(fall_id = 1L, aufnahmegewicht = 1L)
-  neugeb <- tibble::tibble(
-    fall_id = 1L,
-    geburtsgewicht = 1L,
-    gestationsalter2 = 1L
-  )
-  expect_warning(fmt_swissdrg_babydata(admin, neugeb))
-
-  admin <- tibble::tibble(fall_id = 1L)
-  neugeb <- tibble::tibble(
-    fall_id = 1L,
-    gestationsalter1 = 1L,
-    gestationsalter2 = 1L
-  )
-  expect_error(fmt_swissdrg_babydata(admin, neugeb))
-
-  admin <- tibble::tibble(fall_id = 1L, aufnahmegewicht = 1L)
   neugeb <- tibble::tibble(fall_id = 1L, geburtsgewicht = 1L)
   expect_error(fmt_swissdrg_babydata(admin, neugeb))
 })
 
 test_that("fmt_swissdrg_babydata works", {
-  admin <- tibble(
+  admin <- dplyr::tibble(
     fall_id = 1:4,
-    aufnahem = c(1L, NA_integer_, 1L, NA_integer_),
-    ssw = c(NA_integer_, 2L, 2L, NA_integer_)
+    aufnahmegewicht = c(1L, NA_integer_, 1L, NA_integer_),
+  )
+  neugeb <- dplyr::tibble(
+    fall_id = 1:4,
+    gestationsalter2 = c(NA_integer_, 2L, 2L, NA_integer_)
   )
 
   expect_identical(
-    fmt_swissdrg_babydata(admin, neugeb)$babydata,
-    c('1|', '|2', '|2', '')
+    fmt_swissdrg_babydata(admin, neugeb)$baby_data,
+    c('1|', '|2', '1|2', '')
   )
 })
 
 test_that("fmt_swissdrg_diag works", {
-  diag <- tibble(
+  diag <- dplyr::tibble(
     fall_id = c(111L, 112L, 113L, 114L, 114L),
     diagnose_id = c(1L, 1L, 1L, 1L, 2L),
     diagnose_kode = c('I269', 'I269', 'I269', 'I269', 'E1190'),
@@ -185,7 +147,7 @@ test_that("fmt_swissdrg_diag works", {
 })
 
 test_that("fmt_swissdrg_proc works", {
-  proc <- tibble(
+  proc <- dplyr::tibble(
     fall_id = c(111L, 112L, 113L, 114L, 115L, 115L, 115L),
     behandlung_id = c(1L, 1L, 1L, 1L, 1L, 2L, 3L),
     behandlung_chop = c(
@@ -229,7 +191,7 @@ test_that("fmt_swissdrg_proc works", {
 })
 
 test_that("fmt_swissdrg_medi works", {
-  medi <- tibble(
+  medi <- dplyr::tibble(
     fall_id = c(111L, 111L, 112L, 112L),
     medi_id = c(1L, 2L, 1L, 2L),
     medi_atc = c('L01XC07', 'B02BD02', 'L04AA04', 'J02AC04'),

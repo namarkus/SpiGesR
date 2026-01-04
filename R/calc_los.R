@@ -15,6 +15,7 @@ calc_los <- function(spiges_data) {
 
   admin_varnames <- c(
     'fall_id',
+    'jahr',
     'eintrittsdatum',
     'austrittsdatum',
     'admin_urlaub',
@@ -41,8 +42,9 @@ calc_los <- function(spiges_data) {
   cases <-
     spiges_admin |>
     dplyr::mutate(
-      ADD = as.Date(substr(eintrittsdatum, 1, 8), format = '%Y%m%d'),
-      SED = as.Date(substr(austrittsdatum, 1, 8), format = '%Y%m%d'),
+      ADD = spiges2date(eintrittsdatum),
+      SED = spiges2date(austrittsdatum),
+      EOY = spiges2date(paste0(as.character(jahr), '1231')),
       ADL = as.integer(floor(admin_urlaub / 24)),
       TRNSF_A = austrittsentscheid != 5L & austritt_aufenthalt == 6L,
       TRNSF_R = austrittsentscheid != 5L &
@@ -50,7 +52,7 @@ calc_los <- function(spiges_data) {
       TRNSF_P = austrittsentscheid != 5L &
         austritt_aufenthalt %in% c(4, 5, 55, 6, 66)
     ) |>
-    dplyr::select(fall_id, ADD, SED, ADL, TRNSF_A, TRNSF_R, TRNSF_P)
+    dplyr::select(fall_id, ADD, SED, EOY, ADL, TRNSF_A, TRNSF_R, TRNSF_P)
 
   # Episodes represent the time between two sub-cases. From these, periods are created that represent the time between discharge and readmission.  periods <-
   first_periods <-
@@ -59,8 +61,8 @@ calc_los <- function(spiges_data) {
     dplyr::group_by(fall_id) |>
     dplyr::mutate(period_id = dplyr::row_number(episode_id) - 1L) |> # make sure, first episode starts at 0
     dplyr::mutate(
-      ep_start = as.Date(substr(episode_beginn, 1, 8), format = '%Y%m%d'),
-      ep_end = as.Date(substr(episode_ende, 1, 8), format = '%Y%m%d'),
+      ep_start = spiges2date(episode_beginn),
+      ep_end = spiges2date(episode_ende),
       period_start = dplyr::lag(ep_end, default = NULL, order_by = period_id),
       period_end = ep_start,
       period_transf_R = wiedereintritt_aufenthalt %in% c(4, 44, 5, 6, 66),
@@ -131,8 +133,8 @@ calc_los <- function(spiges_data) {
     cases |>
     dplyr::anti_join(periods, by = 'fall_id') |>
     dplyr::mutate(
-      episodes = 0L,
-      loc = as.integer(difftime(SED, ADD, units = 'days')),
+      episodes = 1L,
+      loc = as.integer(dplyr::coalesce(SED, EOY) - ADD),
       los_drg = dplyr::case_when(
         ADD != SED ~ loc - ADL,
         ADD == SED & ADL == 0 ~ 1L,
@@ -157,7 +159,7 @@ calc_los <- function(spiges_data) {
     cases |>
     dplyr::inner_join(periods, by = 'fall_id') |>
     dplyr::mutate(
-      loc = as.integer(difftime(SED, ADD, units = 'days')),
+      loc = as.integer(dplyr::coalesce(SED, EOY) - ADD),
       # Period-Start: case-start at period , period_start else
       period_start = dplyr::if_else(period_id == 0, ADD, period_start),
       # Period-End: case-end at last period, period_end else
@@ -166,7 +168,7 @@ calc_los <- function(spiges_data) {
       period_transf_P = dplyr::if_else(last_period, TRNSF_P, period_transf_P)
     ) |>
     dplyr::mutate(
-      lop = as.integer(difftime(period_end, period_start, units = 'days')),
+      lop = as.integer(period_end - period_start),
       lop_drg = dplyr::case_when(
         period_start != period_end ~ lop,
         period_start == period_end ~ 1L
