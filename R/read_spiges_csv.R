@@ -141,6 +141,8 @@ read_spiges_csv <- function(
     spiges_col_types
   )
 
+  spiges_data <- new_spiges_data(spiges_data)
+
   # --- check for problems and disply if any ----------------------------------------------------
   all_problems <- readr::problems(spiges_data)
 
@@ -301,7 +303,6 @@ read_spiges_csv_files <- function(
 ) {
   spiges_data <- vector(mode = 'list', length = length(selected_files))
   names(spiges_data) <- names(selected_files)
-  spiges_data <- new_spiges_data(spiges_data)
 
   # Prefer vroom for speed; fall back to readr if vroom isn't installed.
   use_vroom <- requireNamespace("vroom", quietly = TRUE)

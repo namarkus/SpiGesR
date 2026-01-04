@@ -19,7 +19,9 @@ test_that("admin only can be read", {
 
   expect_length(out, 1)
   expect_named(out, c("admin"))
-  expect_shape(out$admin, nrow = 3)
+  expect_shape(out$admin, nrow = 4)
+  expect_true("jahr" %in% names(out$admin))
+  expect_identical(names(out$admin)[1], "fall_id")
   expect_true("fall_id" %in% names(out$admin))
   expect_identical(names(out$admin)[2], "fall_id")
 })
