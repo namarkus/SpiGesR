@@ -193,14 +193,13 @@ test_that("fmt_swissdrg_proc works", {
 })
 
 test_that("fmt_swissdrg_medi works", {
-  medi <- dplyr::tibble(
-    fall_id = c(111L, 111L, 112L, 112L),
-    medi_id = c(1L, 2L, 1L, 2L),
-    medi_atc = c('L01XC07', 'B02BD02', 'L04AA04', 'J02AC04'),
-    medi_zusatz = c(NA_character_, 'Plas', 'CFR', 'Susp'),
-    medi_verabreichungsart = c('IV', 'IV', 'IV', 'O'),
-    medi_dosis = c('450.0', '1500', '200', '500'),
-    medi_einheit = c('mg', 'U', 'mg', 'mg')
+  medi <- tibble::tribble(
+    ~fall_id , ~medi_id , ~medi_atc , ~medi_zusatz  , ~medi_verabreichungsart , ~medi_dosis , ~medi_einheit ,
+    111L     , 1L       , 'L01XC07' , NA_character_ , 'IV'                    , '450.0'     , 'mg'          ,
+    111L     , 2L       , 'B02BD02' , 'Plas'        , 'IV'                    , '1500'      , 'U'           ,
+    112L     , 1L       , 'L04AA04' , 'CFR'         , 'IV'                    , '200'       , 'mg'          ,
+    112L     , 2L       , 'J02AC04' , 'Susp'        , 'O'                     , '500'       , 'mg'          ,
+    113L     , 1L       , 'J0AC3'   , 'Susp'        , 'O'                     , '500'       , 'mg' # not in result nchar(medi_atc < 7)
   )
 
   expect_identical(

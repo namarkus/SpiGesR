@@ -357,6 +357,9 @@ fmt_swissdrg_medi <- function(medi) {
       unit = tidyr::replace_na(medi_einheit, ''),
       .keep = 'none'
     ) |>
+    dplyr::filter(
+      nchar(atc_code) == 7 & application != '' & dose != '' & unit != ''
+    ) |>
     dplyr::mutate(
       medis = paste0(
         atc_code,
