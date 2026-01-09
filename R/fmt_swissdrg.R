@@ -119,14 +119,17 @@ fmt_swissdrg_admin <- function(admin) {
       ID = fall_id,
       patient_id = as.character(fall_id),
       age = dplyr::case_when(
-        !is.na(alter) & alter > 0L ~ as.character(alter),
+        !is.na(alter) & alter > 0L ~ as.character(pmin(alter, 124)),
         !is.na(alter_U1) & alter_U1 > 0 ~ '',
-        .default = as.character(alter)
+        .default = as.character(pmin(alter, 124))
       ),
-      age_days = dplyr::if_else(
-        !is.na(alter) & alter > 0,
-        '',
-        as.character(alter_U1)
+      age_days = dplyr::case_when(
+        !is.na(alter) & alter > 0 ~ '',
+        (is.na(alter) | alter == 0) & !is.na(alter_U1) ~ as.character(pmax(
+          alter_U1,
+          1
+        )),
+        .default = ''
       ),
       sex = dplyr::case_match(geschlecht, 1 ~ 'M', 2 ~ 'W', .default = ''),
       adm_date = spiges2datestr(eintrittsdatum),
@@ -144,7 +147,11 @@ fmt_swissdrg_admin <- function(admin) {
         !(austrittsentscheid %in% c(2L, 3L, 5L)) &
           austritt_aufenthalt != 6L ~ '00'
       ),
-      resp_hours = as.character(beatmung)
+      resp_hours = dplyr::if_else(
+        as.character(beatmung) == 'NA',
+        '',
+        dplyr::coalesce(as.character(beatmung), '')
+      )
     ) |>
     dplyr::select(
       ID,

@@ -24,9 +24,9 @@ test_that("fmt_swissdrg_admin admin formats correctly", {
 
 test_that("fmt_swissdrg_admin age formats correctly", {
   admin <- tibble::tibble(
-    fall_id = c(111L, 112L, 113L, 114L, 115L, 116L, 117L),
-    alter = c(45L, 45L, 45L, NA_integer_, 0, 45L, 45),
-    alter_U1 = c(NA_integer_, 0, 1L, 1L, 1L, 1L, 1L),
+    fall_id = c(111L, 112L, 113L, 114L, 115L, 116L, 117L, 118L, 119L),
+    alter = c(45L, 45L, 45L, NA_integer_, 0L, 45L, 45L, NA_integer_, 125L),
+    alter_U1 = c(NA_integer_, 0, 1L, 1L, 1L, 1L, 1L, 0L, NA_integer_),
     geschlecht = 1L,
     eintrittsdatum = "2025010113",
     eintritt_aufenthalt = 1L,
@@ -43,6 +43,8 @@ test_that("fmt_swissdrg_admin age formats correctly", {
   expect_equal(res$age_days[4:6], c('1', '1', ''))
   expect_equal(res$age[7], "45")
   expect_equal(res$age_days[7], "")
+  expect_equal(res$age_days[8], "1")
+  expect_equal(res$age[9], "124")
 })
 
 test_that("fmt_swissdrg_admin admission type formats correctly", {
