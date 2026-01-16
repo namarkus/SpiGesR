@@ -30,44 +30,6 @@ spiges_meta <- function(x) {
   attr(x, "meta")
 }
 
-# internal: set metadata
-spiges_set_meta <- function(
-  x,
-  Datenjahr,
-  Datenversion,
-  Source = c('SpiGes', 'MS'),
-  Sourceformat = c('CSV', 'XML', 'DAT'),
-  Version = "1.4"
-) {
-  stopifnot(inherits(x, "spiges_data"))
-
-  attr(x, "meta") <- list(
-    Datenjahr = Datenjahr,
-    Datenversion = Datenversion,
-    Source = Source,
-    Sourceformat = Sourceformat,
-    Version = Version
-  )
-  x
-}
-
-# internal: add problems
-spiges_add_problems <- function(x, problems) {
-  if (is.null(problems) || nrow(problems) == 0) {
-    return(x)
-  }
-
-  p_old <- attr(x, "problems", exact = TRUE)
-  if (is.null(p_old)) {
-    p_old <- tibble::tibble()
-  }
-
-  p_new <- problems
-
-  attr(x, "problems") <- dplyr::bind_rows(p_old, p_new)
-  x
-}
-
 # internal validation
 validate_spiges_data <- function(x) {
   stopifnot(

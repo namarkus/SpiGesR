@@ -12,7 +12,11 @@ library(dplyr)
 spiges_meta <- read_delim(
   file = "data-raw/SpiGes_Metadaten_v1.4.csv",
   delim = ";",
-  col_types = cols(varnum = col_integer(), .default = col_character())
+  col_types = cols(
+    varnum = col_integer(),
+    key = col_integer(),
+    .default = col_character()
+  )
 )
 
 # 2 ) extract file-/tablenames
@@ -24,9 +28,12 @@ spiges_tables <- spiges_meta |>
 # 3) Split by tablename to create one schema table per logical table
 spiges_columns <-
   spiges_meta %>%
-  select(tablename, varnum, canonical, type, clear_name, anon_name) %>%
+  select(tablename, varnum, canonical, type, key, clear_name, anon_name) %>%
   arrange(tablename, varnum) |>
-  nest(data = c(canonical, type, clear_name, anon_name), .by = tablename) |>
+  nest(
+    data = c(canonical, type, key, clear_name, anon_name),
+    .by = tablename
+  ) |>
   mutate(data = set_names(data, tablename)) |>
   pull(data)
 
