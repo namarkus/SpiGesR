@@ -288,7 +288,6 @@ fmt_splg_diag <- function(
           )
         ) |>
         dplyr::summarise(diags = paste0(diags, collapse = ';'), .by = ID) |>
-        dplyr::mutate(diags = paste('ICD', diags)) |>
         dplyr::select(ID, diagnosen = diags)
     } else if (format == 'XML') {
       stop('Format XML for SPLG-Grouper (diag) is not implemented yet.')
@@ -392,8 +391,7 @@ fmt_splg_proc <- function(
           )
         ) %>%
         dplyr::summarise(procs = paste0(procs, collapse = ';'), .by = ID) %>%
-        dplyr::mutate(behand = paste('CHOP', procs)) %>%
-        dplyr::select(ID, behandlungen = behand)
+        dplyr::select(ID, behandlungen = procs)
     } else if (format == 'XML') {
       stop('Format XML for SPLG-Grouper (proc) is not implemented yet.')
     } else if (format == 'JSON') {

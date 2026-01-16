@@ -96,7 +96,7 @@ test_that("fmt_splg_diag format diagnoses correctly", {
   # expect_vector(result_xml$diagnosen, ptype = character(), size = 1)
   expect_vector(result_json$diagnosen, ptype = character(), size = 1)
 
-  expect_equal(result_text$diagnosen, 'ICD C541;C99;K660')
+  expect_equal(result_text$diagnosen, 'C541;C99;K660')
   # expect_equal(result_xml$diagnosen, '<diagnose code="C541" zusatz="C99" rang="0"/>')
   expect_equal(
     result_json$diagnosen,
@@ -141,7 +141,7 @@ test_that("fmt_splg_proc format diagnoses correctly", {
 
   expect_equal(
     result_text$behandlungen,
-    'CHOP 6861:::20180419;6541:0::20180419'
+    '6861:::20180419;6541:0::20180419'
   )
   # expect_equal(result_xml_group$diagnosen, '<diagnose code="C541" zusatz="C99" rang="0"/>')
   expect_equal(
@@ -223,8 +223,8 @@ test_that("fmt_splg formats correctly", {
     c(
       'SPLG-INPUT',
       'fallid=1234;burnr=71291845;agey=34;austritt=20240331',
-      'ICD ICD C541;C99;K660',
-      'CHOP CHOP 6861:::20180419;6541:0::20180419',
+      'ICD C541;C99;K660',
+      'CHOP 6861:::20180419;6541:0::20180419',
       'fallid=5678;burnr=71234865;agey=63;austritt=20241015',
       'ICD ',
       'CHOP '
