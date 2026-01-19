@@ -615,7 +615,7 @@ read_spiges_csv_file <- function(
   spiges_csv <- spiges_csv |>
     dplyr::rename(!!!rename_map)
 
-  # Build the fall_id key for duplicate checks in this table.
+  # Build the fall_id key
   spiges_csv <- tidyr::unite(
     spiges_csv,
     "fall_id",
@@ -623,16 +623,38 @@ read_spiges_csv_file <- function(
     sep = "|",
     remove = FALSE
   )
-  dup_idx <- which(duplicated(spiges_csv$fall_id))
-  dup_problems <- empty_problems_tbl()
-  if (length(dup_idx) > 0L) {
-    dup_problems <- tibble::tibble(
-      row = dup_idx,
-      col = NA_integer_,
-      expected = "unique fall key",
-      actual = spiges_csv$fall_id[dup_idx],
-      file = tablenm
-    )
+
+  # build key for duplicate checks in this table (for selected tables only)
+  if (tablenm %in% c('admin', 'neugeborene', 'psychiatrie', 'diag', 'proc')) {
+    if (tablenm == 'diag' & 'diagnose_id' %in% coltypes_tbl$canonical) {
+      key_cols <- c(key_cols, 'diagnose_id')
+    } else if (
+      tablenm == 'proc' & 'behandlung_id' %in% coltypes_tbl$canonical
+    ) {
+      key_cols <- c(key_cols, 'behandlung_id')
+    }
+
+    tbl_key <- tidyr::unite(
+      spiges_csv,
+      "tbl_key",
+      dplyr::all_of(key_cols),
+      sep = "|"
+    ) |>
+      dplyr::pull(tbl_key)
+
+    dup_idx <- which(duplicated(tbl_key))
+    dup_problems <- empty_problems_tbl()
+    if (length(dup_idx) > 0L) {
+      dup_problems <- tibble::tibble(
+        row = dup_idx,
+        col = NA_integer_,
+        expected = "unique fall key",
+        actual = tbl_key[dup_idx],
+        file = tablenm
+      )
+    }
+  } else {
+    dup_problems <- empty_problems_tbl()
   }
 
   missing_key_idx <- which(!stats::complete.cases(spiges_csv[key_cols]))
