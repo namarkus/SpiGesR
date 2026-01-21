@@ -8,7 +8,7 @@ test_that("read_spiges_csv_file renames, casts integers, and reports problems", 
   # The second row has a non-integer value and the third has a parse error.
   writeLines(
     c(
-      "JAHR,ENT_ID,STANDORT_ID,FALL_ID,ALTER",
+      "JAHR,ENT_ID,BURNR,FALL_ID,ALTER",
       "2024,E1,S1,F1,1.5",
       "2024,E1,S1,F1,x"
     ),
@@ -16,17 +16,17 @@ test_that("read_spiges_csv_file renames, casts integers, and reports problems", 
   )
 
   coltypes_tbl <- tibble::tribble(
-    ~fileheader   , ~canonical       , ~type       , ~col_spec              , ~anon_fg , ~user_col_fg ,
-    "JAHR"        , "jahr"           , "integer"   , readr::col_double()    , FALSE    , FALSE        ,
-    "ENT_ID"      , "ent_id"         , "character" , readr::col_character() , FALSE    , FALSE        ,
-    "STANDORT_ID" , "standort_id"    , "character" , readr::col_character() , FALSE    , FALSE        ,
-    "FALL_ID"     , "fall_id_spital" , "character" , readr::col_character() , FALSE    , FALSE        ,
-    "ALTER"       , "alter"          , "integer"   , readr::col_double()    , FALSE    , FALSE
+    ~fileheader , ~canonical       , ~type       , ~col_spec              , ~anon_fg , ~user_col_fg ,
+    "JAHR"      , "jahr"           , "integer"   , readr::col_double()    , FALSE    , FALSE        ,
+    "ENT_ID"    , "ent_id"         , "character" , readr::col_character() , FALSE    , FALSE        ,
+    "BURNR"     , "standort_id"    , "character" , readr::col_character() , FALSE    , FALSE        ,
+    "FALL_ID"   , "fall_id_spital" , "character" , readr::col_character() , FALSE    , FALSE        ,
+    "ALTER"     , "alter"          , "integer"   , readr::col_double()    , FALSE    , FALSE
   )
 
   out <- read_spiges_csv_file(
     fpath = csv_path,
-    tablenm = "demo",
+    tablenm = "admin",
     coltypes_tbl = coltypes_tbl,
     use_vroom = FALSE
   )
@@ -46,7 +46,7 @@ test_that("read_spiges_csv_file renames, casts integers, and reports problems", 
   expect_true(all(is.na(out$data$alter)))
 
   expect_true(nrow(out$problems) >= 3)
-  expect_true(all(out$problems$file == "demo"))
+  expect_true(all(out$problems$file == "admin"))
   expect_true(any(out$problems$expected == "an integer"))
   expect_true(any(out$problems$expected == "unique fall key"))
 })
@@ -91,19 +91,19 @@ test_that("fall_id is mapped from admin, is first column, and key cols are remov
 
   spiges_coltypes = list(
     admin = tibble::tribble(
-      ~fileheader   , ~canonical       , ~type       , ~col_spec              , ~anon_fg , ~user_col_fg ,
-      'JAHR'        , 'jahr'           , 'integer'   , readr::col_double()    , FALSE    , FALSE        ,
-      'ENT_ID'      , 'ent_id'         , 'character' , readr::col_character() , FALSE    , FALSE        ,
-      'STANDORT_ID' , 'standort_id'    , 'character' , readr::col_character() , FALSE    , FALSE        ,
-      'FALL_ID'     , 'fall_id_spital' , 'character' , readr::col_character() , FALSE    , FALSE        ,
-      'GESCHLECHT'  , 'geschlecht'     , 'character' , readr::col_character() , FALSE    , FALSE        ,
-      'ALTER'       , 'alter'          , 'integer'   , readr::col_double()    , FALSE    , FALSE
+      ~fileheader  , ~canonical       , ~type       , ~col_spec              , ~anon_fg , ~user_col_fg ,
+      'JAHR'       , 'jahr'           , 'integer'   , readr::col_double()    , FALSE    , FALSE        ,
+      'ENT_ID'     , 'ent_id'         , 'character' , readr::col_character() , FALSE    , FALSE        ,
+      'BURNR'      , 'standort_id'    , 'character' , readr::col_character() , FALSE    , FALSE        ,
+      'FALL_ID'    , 'fall_id_spital' , 'character' , readr::col_character() , FALSE    , FALSE        ,
+      'GESCHLECHT' , 'geschlecht'     , 'character' , readr::col_character() , FALSE    , FALSE        ,
+      'ALTER'      , 'alter'          , 'integer'   , readr::col_double()    , FALSE    , FALSE
     ),
     diag = tibble::tribble(
       ~fileheader           , ~canonical            , ~type       , ~col_spec              , ~anon_fg , ~user_col_fg ,
       'JAHR'                , 'jahr'                , 'integer'   , readr::col_double()    , FALSE    , FALSE        ,
       'ENT_ID'              , 'ent_id'              , 'character' , readr::col_character() , FALSE    , FALSE        ,
-      'STANDORT_ID'         , 'standort_id'         , 'character' , readr::col_character() , FALSE    , FALSE        ,
+      'BURNR'               , 'standort_id'         , 'character' , readr::col_character() , FALSE    , FALSE        ,
       'FALL_ID'             , 'fall_id_spital'      , 'character' , readr::col_character() , FALSE    , FALSE        ,
       'DIAGNOSE_ID'         , 'diagnose_id'         , 'integer'   , readr::col_double()    , FALSE    , FALSE        ,
       'DIAGNOSE_KODE'       , 'diagnose_kode'       , 'character' , readr::col_character() , FALSE    , FALSE        ,
@@ -113,7 +113,7 @@ test_that("fall_id is mapped from admin, is first column, and key cols are remov
       ~fileheader             , ~canonical              , ~type       , ~col_spec              , ~anon_fg , ~user_col_fg ,
       'JAHR'                  , 'jahr'                  , 'integer'   , readr::col_double()    , FALSE    , FALSE        ,
       'ENT_ID'                , 'ent_id'                , 'character' , readr::col_character() , FALSE    , FALSE        ,
-      'STANDORT_ID'           , 'standort_id'           , 'character' , readr::col_character() , FALSE    , FALSE        ,
+      'BURNR'                 , 'standort_id'           , 'character' , readr::col_character() , FALSE    , FALSE        ,
       'FALL_ID'               , 'fall_id_spital'        , 'character' , readr::col_character() , FALSE    , FALSE        ,
       'BEHANDLUNG_ID'         , 'behandlung_id'         , 'integer'   , readr::col_double()    , FALSE    , FALSE        ,
       'BEHANDLUNG_CHOP'       , 'behandlung_chop'       , 'character' , readr::col_character() , FALSE    , FALSE        ,
