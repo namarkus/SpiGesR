@@ -177,13 +177,14 @@ fmt_splg_admin_newborn <- function(
   if (type %in% c('control', 'output')) {
     splg_admin_ctrl <-
       admin |>
+      dplyr::mutate(falltyp = paste0(abc_fall, ':3:', tarif)) |>
       dplyr::select(
         ID = fall_id,
         burnr = spital_id,
-        plz = plz,
-        standort = standort,
-        wohnkanton = wohnkanton,
-        falltyp = paste0('abc_fall', ':3:', tarif)
+        plz,
+        standort,
+        wohnkanton,
+        falltyp
       )
 
     splg_admin <- dplyr::left_join(splg_admin, splg_admin_ctrl, by = 'ID')
