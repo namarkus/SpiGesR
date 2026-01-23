@@ -109,8 +109,8 @@ test_that("fmt_swissdrg_admin dates format correctly", {
 
 test_that("fmt_swissdrg_babydata checks vars", {
   admin <- tibble::tibble(fall_id = 1L, aufnahmegewicht = 1L)
-  neugeb <- tibble::tibble(fall_id = 1L, geburtsgewicht = 1L)
-  expect_error(fmt_swissdrg_babydata(admin, neugeb))
+  newborn <- tibble::tibble(fall_id = 1L, geburtsgewicht = 1L)
+  expect_error(fmt_swissdrg_babydata(admin, newborn))
 })
 
 test_that("fmt_swissdrg_babydata works", {
@@ -118,13 +118,13 @@ test_that("fmt_swissdrg_babydata works", {
     fall_id = 1:4,
     aufnahmegewicht = c(1L, NA_integer_, 1L, NA_integer_),
   )
-  neugeb <- dplyr::tibble(
+  newborn <- dplyr::tibble(
     fall_id = 1:4,
     gestationsalter2 = c(NA_integer_, 2L, 2L, NA_integer_)
   )
 
   expect_identical(
-    fmt_swissdrg_babydata(admin, neugeb)$baby_data,
+    fmt_swissdrg_babydata(admin, newborn)$baby_data,
     c('1|', '|2', '1|2', '')
   )
 })
@@ -143,6 +143,22 @@ test_that("fmt_swissdrg_diag works", {
       'I269',
       'I269',
       'I269|E1190',
+      'I269|E1190'
+    )
+  )
+})
+
+test_that("fmt_swissdrg_diag order correctly", {
+  diag <- dplyr::tibble(
+    fall_id = c(114L, 114L),
+    diagnose_id = c(2L, 1L),
+    diagnose_kode = c('E1190', 'I269'),
+    diagnose_zusatz = c('', '')
+  )
+
+  expect_identical(
+    fmt_swissdrg_diag(diag)$diagnoses,
+    c(
       'I269|E1190'
     )
   )
@@ -191,6 +207,22 @@ test_that("fmt_swissdrg_proc works", {
     )
   )
 })
+
+test_that("fmt_swissdrg_proc order correctly", {
+  proc <- dplyr::tibble(
+    fall_id = c(115L, 115L, 115L),
+    behandlung_id = c(3L, 1L, 2L),
+    behandlung_chop = c('921122', '992502', '874199'),
+    behandlung_seitigkeit = c(NA_integer_, NA_integer_, 1L),
+    behandlung_beginn = c('20221103', '', '')
+  )
+
+  expect_identical(
+    fmt_swissdrg_proc(proc)$procedures,
+    '992502::|874199:R:|921122::20221103'
+  )
+})
+
 
 test_that("fmt_swissdrg_medi works", {
   medi <- tibble::tribble(

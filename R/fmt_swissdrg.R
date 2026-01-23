@@ -20,14 +20,14 @@ fmt_swissdrg <- function(
   # Check input
   check_spiges_tables(
     spiges_data,
-    c('admin', 'neugeborene', 'diag', 'proc', 'medi')
+    c('admin', 'newborn', 'diag', 'proc', 'medi')
   )
 
   format <- match.arg(format)
   tariff <- match.arg(tariff)
 
   spiges_admin <- spiges_data$admin
-  spiges_neugeb <- spiges_data$neugeborene |>
+  spiges_newborn <- spiges_data$newborn |>
     dplyr::select(fall_id, gestationsalter2, geburtsgewicht)
   spiges_diag <- spiges_data$diag
   spiges_proc <- spiges_data$proc
@@ -46,7 +46,7 @@ fmt_swissdrg <- function(
   swissdrg_los <- fmt_swissdrg_los(spiges_los, tariff)
 
   # format babydata
-  swissdrg_babydata <- fmt_swissdrg_babydata(spiges_admin, spiges_neugeb)
+  swissdrg_babydata <- fmt_swissdrg_babydata(spiges_admin, spiges_newborn)
 
   # format diags
   swissdrg_diags <- fmt_swissdrg_diag(spiges_diag)
@@ -194,25 +194,25 @@ fmt_swissdrg_los <- function(los, tariff) {
 }
 
 #' Internal: format babydata records for SwissDRG-Grouper input
-fmt_swissdrg_babydata <- function(admin, neugeb) {
+fmt_swissdrg_babydata <- function(admin, newborn) {
   # check variables
   has_aufnahme <- 'aufnahmegewicht' %in% names(admin)
-  has_geburts <- 'geburtsgewicht' %in% names(neugeb)
-  has_gest1 <- 'gestationsalter1' %in% names(neugeb)
-  has_gest2 <- 'gestationsalter2' %in% names(neugeb)
+  has_geburts <- 'geburtsgewicht' %in% names(newborn)
+  has_gest1 <- 'gestationsalter1' %in% names(newborn)
+  has_gest2 <- 'gestationsalter2' %in% names(newborn)
 
   if (has_aufnahme & has_geburts) {
     ggw_data <-
-      dplyr::inner_join(admin, neugeb, by = 'fall_id') |>
+      dplyr::inner_join(admin, newborn, by = 'fall_id') |>
       dplyr::mutate(ggw = dplyr::coalesce(aufnahmegewicht, geburtsgewicht)) |>
       dplyr::select(fall_id, ggw)
   } else if (has_geburts) {
     ggw_data <-
-      dplyr::inner_join(admin, neugeb, by = 'fall_id') |>
+      dplyr::inner_join(admin, newborn, by = 'fall_id') |>
       dplyr::select(fall_id, ggw = geburtsgewicht)
   } else if (has_aufnahme) {
     ggw_data <-
-      dplyr::inner_join(admin, neugeb, by = 'fall_id') |>
+      dplyr::inner_join(admin, newborn, by = 'fall_id') |>
       dplyr::select(fall_id, ggw = aufnahmegewicht)
   } else {
     stop(
@@ -221,15 +221,15 @@ fmt_swissdrg_babydata <- function(admin, neugeb) {
   }
 
   if (has_gest1 & has_gest2) {
-    ssw_data <- neugeb |>
+    ssw_data <- newborn |>
       dplyr::mutate(
         ssw = dplyr::coalesce(gestationsalter2, gestationsalter1)
       ) |>
       dplyr::select(fall_id, ssw)
   } else if (has_gest2) {
-    ssw_data <- neugeb |> dplyr::select(fall_id, ssw = gestationsalter2)
+    ssw_data <- newborn |> dplyr::select(fall_id, ssw = gestationsalter2)
   } else if (has_gest1) {
-    ssw_data <- neugeb |> dplyr::select(fall_id, ssw = gestationsalter1)
+    ssw_data <- newborn |> dplyr::select(fall_id, ssw = gestationsalter1)
   } else {
     stop(
       "At least one of 'gestationsalter1' or 'gestationsalter2' must be present."

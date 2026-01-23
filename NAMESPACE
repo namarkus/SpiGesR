@@ -2,9 +2,12 @@
 
 S3method(print,spiges_data)
 export(filter.spiges_data)
+export(filter_tab)
 export(fmt_splg)
 export(fmt_swissdrg)
 export(problems.spiges_data)
 export(read_spiges_csv)
 export(read_spiges_xml)
+export(select.spiges_data)
+export(select_tab)
 importFrom(readr,problems)

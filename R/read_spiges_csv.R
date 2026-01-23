@@ -625,7 +625,7 @@ read_spiges_csv_file <- function(
   )
 
   # build key for duplicate checks in this table (for selected tables only)
-  if (tablenm %in% c('admin', 'neugeborene', 'psychiatrie', 'diag', 'proc')) {
+  if (tablenm %in% c('admin', 'newborn', 'psychiatry', 'diag', 'proc')) {
     if (tablenm == 'diag' & 'diagnose_id' %in% coltypes_tbl$canonical) {
       key_cols <- c(key_cols, 'diagnose_id')
     } else if (
