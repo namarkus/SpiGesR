@@ -20,6 +20,28 @@ filter.spiges_data <- function(.data, ...) {
   out
 }
 
+#' Filter rows in a specific table of a spiges_data object
+#'
+#' Applies [dplyr::filter()] to a single table inside a `spiges_data` object.
+#' All other tables remain unchanged.
+#'
+#' @inheritParams dplyr::filter
+#' @param .data A `spiges_data` object (named list of tables).
+#' @param tab Table to filter (unquoted name or string), e.g. `admin` or `"admin"`.
+#'
+#' @return A `spiges_data` object with filtered rows in `tab`.
+#' @seealso [dplyr::filter()]
+#' @export
+filter_tab <- function(.data, tab, ...) {
+  check_spiges_data(.data)
+
+  tab_name <- rlang::as_string(rlang::ensym(tab))
+  check_spiges_table(.data, tab_name)
+
+  .data[[tab_name]] <- dplyr::filter(.data[[tab_name]], ...)
+  .data
+}
+
 #' Select variables from a table in a spiges_data object
 #'
 #' Selects columns from one table contained in a `spiges_data` (a named list of
@@ -35,7 +57,7 @@ filter.spiges_data <- function(.data, ...) {
 #' @return A `spiges_data` object with the selected columns applied to `tab`.
 #' @seealso [dplyr::select()], [dplyr::dplyr_tidy_select]
 #' @export
-select_test <- function(.data, tab, ...) {
+select_tab <- function(.data, tab, ...) {
   check_spiges_data(.data)
 
   tab_name <- rlang::as_string(rlang::ensym(tab))
@@ -49,30 +71,22 @@ select_test <- function(.data, tab, ...) {
   .data
 }
 
+#' Select tables from a spiges_data object
+#'
+#' Selects tables from a `spiges_data` object (a named list of tables).
+#' Selection syntax in `...` uses tidyselect, like [dplyr::select()].
+#'
+#' @inheritParams dplyr::select
+#' @param .data A `spiges_data` object (named list of tables).
+#' @param ... <[`tidy-select`][dplyr::dplyr_tidy_select]> Tables to select.
+#'
+#' @return A `spiges_data` object with only the selected tables.
+#' @seealso [dplyr::select()], [dplyr::dplyr_tidy_select]
+#' @export
+select.spiges_data <- function(.data, ...) {
+  check_spiges_data(.data)
 
-spiges24_fr |>
-  select_test(
-    tab = admin,
-    jahr,
-    fall_id,
-    ent_id,
-    uid,
-    spital_id,
-    standort_id,
-    fall_id_ch,
-    fall_id_spital
-  ) |>
-  purrr::pluck('admin')
-
-spiges24_fr |>
-  select_test(
-    jahr,
-    fall_id,
-    ent_id,
-    uid,
-    spital_id,
-    standort_id,
-    fall_id_ch,
-    fall_id_spital
-  ) |>
-  purrr::pluck('admin')
+  out <- dplyr::select(.data, ...)
+  class(out) <- class(.data)
+  out
+}
