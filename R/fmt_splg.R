@@ -165,7 +165,6 @@ fmt_splg_admin_newborn <- function(
     dplyr::select(
       ID = fall_id,
       fallid = fall_id,
-      burnr = spital_id,
       agey = alter,
       aged = alter_U1,
       ssw = gestationsalter2,
@@ -211,6 +210,10 @@ fmt_splg_admin_newborn <- function(
     if (format == 'TEXT') {
       splg_admin_in <-
         splg_admin |>
+        dplyr::mutate(across(
+          where(is.character),
+          ~ dplyr::if_else(. == ' ' | . == '', NA_character_, .)
+        )) |>
         dplyr::mutate(dplyr::across(
           -ID,
           ~ dplyr::if_else(
