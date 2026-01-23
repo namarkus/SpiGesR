@@ -1,15 +1,15 @@
-#---- fmt_splg_admin_neugeb -------------------------------------------------
+#---- fmt_splg_admin_newborn -------------------------------------------------
 
-test_that("fmt_splg_admin_neugeb errors on non-dataframe input or missing columns", {
-  expect_error(fmt_splg_admin_neugeb(c(1, 2, 3)))
-  expect_error(fmt_splg_admin_neugeb(data.frame(
+test_that("fmt_splg_admin_newborn errors on non-dataframe input or missing columns", {
+  expect_error(fmt_splg_admin_newborn(c(1, 2, 3)))
+  expect_error(fmt_splg_admin_newborn(data.frame(
     fall_id = 1234,
     alter = 62
   )))
 })
 
 
-test_that("fmt_splg_admin_neugeb formats correctly", {
+test_that("fmt_splg_admin_newborn formats correctly", {
   # Test data
   admin_test_data <-
     data.frame(
@@ -25,22 +25,22 @@ test_that("fmt_splg_admin_neugeb formats correctly", {
       beatmung = NA,
       austrittsdatum = c(20240331, 20241015)
     )
-  neugeb_test_data = data.frame(
+  newborn_test_data = data.frame(
     fall_id = NA,
     gestationsalter2 = NA,
     geburtsgewicht = NA
   )
 
-  result_text <- fmt_splg_admin_neugeb(
+  result_text <- fmt_splg_admin_newborn(
     admin = admin_test_data,
-    neugeb = neugeb_test_data,
+    newborn = newborn_test_data,
     type = 'group',
     format = 'TEXT'
   )
-  # result_xml <- fmt_splg_admin_neugeb(admin_test_data, neugeb_test_data, type = 'group', format = 'XML')
-  result_json <- fmt_splg_admin_neugeb(
+  # result_xml <- fmt_splg_admin_newborn(admin_test_data, newborn_test_data, type = 'group', format = 'XML')
+  result_json <- fmt_splg_admin_newborn(
     admin_test_data,
-    neugeb_test_data,
+    newborn_test_data,
     type = 'group',
     format = 'JSON'
   )
@@ -60,9 +60,9 @@ test_that("fmt_splg_admin_neugeb formats correctly", {
     '[{\"fallid\":"5678",\"burnr\":"71234865",\"agey\":"63",\"austritt\":"20241015"}]'
   )
 
-  expect_error(fmt_splg_admin_neugeb(
+  expect_error(fmt_splg_admin_newborn(
     admin_test_data,
-    neugeb_test_data,
+    newborn_test_data,
     type = 'group',
     format = 'XML'
   ))
@@ -106,6 +106,20 @@ test_that("fmt_splg_diag format diagnoses correctly", {
   expect_error(fmt_splg_diag(diag_test_data, format = 'XML'))
 })
 
+test_that("fmt_splg_diag orders diagnoses correctly (in output-formt TEXT)", {
+  # Test data
+  diag_test_data <-
+    data.frame(
+      fall_id = rep(1234, 2),
+      diagnose_id = c(2L, 1L),
+      diagnose_kode = c('C541', 'K660'),
+      diagnose_seitigkeit = NA,
+      diagnose_zusatz = c(NA, NA)
+    )
+
+  result_text <- fmt_splg_diag(diag_test_data, format = 'TEXT')
+  expect_equal(result_text$diagnosen, 'K660;C541')
+})
 
 #---- fmt_splg_proc -------------------------------------------------
 
@@ -152,6 +166,25 @@ test_that("fmt_splg_proc format diagnoses correctly", {
   expect_error(fmt_splg_proc(proc_test_data, format = 'XML'))
 })
 
+test_that("fmt_splg_proc orders diagnoses correctly (in output-formt TEXT)", {
+  # Test data
+  proc_test_data <-
+    data.frame(
+      fall_id = rep(1234, 2),
+      behandlung_id = c(2L, 1L),
+      behandlung_chop = c('6541', '6861'),
+      behandlung_seitigkeit = c(0L, NA_integer_),
+      behandlung_beginn = c('20180419', '2018041915'),
+      behandlung_auswaerts = NA_integer_
+    )
+
+  result_text <- fmt_splg_proc(proc_test_data, format = 'TEXT')
+  expect_equal(
+    result_text$behandlungen,
+    '6861:::20180419;6541:0::20180419'
+  )
+})
+
 #---- fmt_splg -------------------------------------------------
 
 test_that("fmt_splg errors on non-dataframe input or missing columns", {
@@ -178,7 +211,7 @@ test_that("fmt_splg formats correctly", {
       beatmung = NA,
       austrittsdatum = c(20240331, 20241015)
     ),
-    neugeborene = data.frame(
+    newbornorene = data.frame(
       fall_id = NA,
       gestationsalter2 = NA,
       geburtsgewicht = NA

@@ -25,18 +25,18 @@ fmt_splg <- function(
   format = match.arg(format)
 
   # Check input
-  check_spiges_tables(spiges_data, c('admin', 'neugeborene', 'diag', 'proc'))
+  check_spiges_tables(spiges_data, c('admin', 'newborn', 'diag', 'proc'))
 
   spiges_admin <- spiges_data$admin
-  spiges_neugeb <- spiges_data$neugeborene |>
+  spiges_newborn <- spiges_data$newborn |>
     dplyr::select(fall_id, gestationsalter2, geburtsgewicht)
   spiges_diag <- spiges_data$diag
   spiges_proc <- spiges_data$proc
 
   # format admin
-  splg_admin <- fmt_splg_admin_neugeb(
+  splg_admin <- fmt_splg_admin_newborn(
     spiges_admin,
-    spiges_neugeb,
+    spiges_newborn,
     format = format,
     type = type,
     version = version
@@ -94,9 +94,9 @@ fmt_splg <- function(
 }
 
 
-fmt_splg_admin_neugeb <- function(
+fmt_splg_admin_newborn <- function(
   admin,
-  neugeb,
+  newborn,
   format,
   type,
   version = '1.4'
@@ -131,14 +131,17 @@ fmt_splg_admin_neugeb <- function(
   if (type == 'group') {
     missing_cols <- setdiff(
       c('fall_id', group_cols),
-      c(names(admin), names(neugeb))
+      c(names(admin), names(newborn))
     )
   } else if (type == 'control') {
-    missing_cols <- setdiff(c('fall_id', group_cols, ctrl_cols), names(admin))
+    missing_cols <- setdiff(
+      c('fall_id', group_cols, ctrl_cols),
+      c(names(admin), names(newborn))
+    )
   } else if (type == 'output') {
     missing_cols <- setdiff(
       c('fall_id', group_cols, ctrl_cols, out_cols),
-      names(admin)
+      c(names(admin), names(newborn))
     )
   }
 
@@ -158,7 +161,7 @@ fmt_splg_admin_neugeb <- function(
       austritt = spiges2datestr(austrittsdatum),
       austritt = dplyr::if_else(austritt == '', NA_character_, austritt)
     ) |>
-    dplyr::left_join(neugeb, by = 'fall_id') %>%
+    dplyr::left_join(newborn, by = 'fall_id') %>%
     dplyr::select(
       ID = fall_id,
       fallid = fall_id,
@@ -287,7 +290,12 @@ fmt_splg_diag <- function(
             diags
           )
         ) |>
-        dplyr::summarise(diags = paste0(diags, collapse = ';'), .by = ID) |>
+        dplyr::group_by(ID) |>
+        dplyr::arrange(rang, .by_group = T) |>
+        dplyr::summarise(
+          diags = paste0(diags, collapse = ';'),
+          .groups = 'drop'
+        ) |>
         dplyr::select(ID, diagnosen = diags)
     } else if (format == 'XML') {
       stop('Format XML for SPLG-Grouper (diag) is not implemented yet.')
@@ -390,7 +398,12 @@ fmt_splg_proc <- function(
             .default = 'ERR'
           )
         ) %>%
-        dplyr::summarise(procs = paste0(procs, collapse = ';'), .by = ID) %>%
+        dplyr::group_by(ID) |>
+        dplyr::arrange(rang, .by_group = T) |>
+        dplyr::summarise(
+          procs = paste0(procs, collapse = ';'),
+          .groups = 'drop'
+        ) %>%
         dplyr::select(ID, behandlungen = procs)
     } else if (format == 'XML') {
       stop('Format XML for SPLG-Grouper (proc) is not implemented yet.')
