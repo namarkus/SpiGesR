@@ -16,8 +16,7 @@ filter.spiges_data <- function(.data, ...) {
     }
   })
 
-  class(out) <- class(.data)
-  out
+  restore_spiges_data(out, .data)
 }
 
 #' Filter rows in a specific table of a spiges_data object
@@ -87,6 +86,14 @@ select.spiges_data <- function(.data, ...) {
   check_spiges_data(.data)
 
   out <- dplyr::select(.data, ...)
-  class(out) <- class(.data)
+  restore_spiges_data(out, .data)
+}
+
+# internal: restore attributes from spiges_data object while keeping names
+restore_spiges_data <- function(out, template) {
+  attrs <- attributes(template)
+  attrs$names <- names(out)
+  attrs$class <- class(template)
+  attributes(out) <- attrs
   out
 }
