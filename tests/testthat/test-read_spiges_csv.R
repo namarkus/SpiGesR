@@ -68,7 +68,11 @@ test_that("admin only can be read", {
     col_types = NULL
   )
 
-  out <- read_spiges_csv_files(dirname, selected_files, spiges_col_types)
+  out <- suppressWarnings(read_spiges_csv_files(
+    dirname,
+    selected_files,
+    spiges_col_types
+  ))
 
   expect_named(out, c("data", "problems"))
   expect_length(out$data, 1)
@@ -142,7 +146,9 @@ test_that("read_spiges_csv reads selected tables and honors user col_types", {
   dir <- testthat::test_path("testdata", "spiges_minimal")
 
   user_cols <- readr::cols_only(
+    DIAGNOSE_ID = readr::col_character(),
     DIAGNOSE_KODE = readr::col_character(),
+    BEHANDLUNG_ID = readr::col_character(),
     BEHANDLUNG_CHOP = readr::col_character()
   )
 
@@ -150,7 +156,9 @@ test_that("read_spiges_csv reads selected tables and honors user col_types", {
     dirname = dir,
     tables = c("diag", "behand"),
     col_types = user_cols
-  )
+  ) |>
+    suppressWarnings() |>
+    suppressMessages()
 
   expect_s3_class(out, "spiges_data")
   expect_named(out, c("admin", "diag", "proc"))
@@ -160,7 +168,13 @@ test_that("read_spiges_csv reads selected tables and honors user col_types", {
       names(out$admin)
   ))
 
-  expect_true(setequal(names(out$diag), c("fall_id", "diagnose_kode")))
-  expect_true(setequal(names(out$proc), c("fall_id", "behandlung_chop")))
+  expect_true(setequal(
+    names(out$diag),
+    c("fall_id", "diagnose_id", "diagnose_kode")
+  ))
+  expect_true(setequal(
+    names(out$proc),
+    c("fall_id", "behandlung_id", "behandlung_chop")
+  ))
   expect_equal(nrow(problems(out)), 0)
 })

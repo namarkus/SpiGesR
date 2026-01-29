@@ -52,12 +52,12 @@ test_that("fmt_splg_admin_newborn formats correctly", {
 
   expect_equal(
     result_text$admin[1],
-    'fallid=1234;burnr=71291845;agey=34;austritt=20240331'
+    'fallid=1234;agey=34;austritt=20240331'
   )
   # expect_equal(result_xml$admin[1], '')
   expect_equal(
     result_json$admin[2],
-    '[{\"fallid\":"5678",\"burnr\":"71234865",\"agey\":"63",\"austritt\":"20241015"}]'
+    '[{\"fallid\":"5678",\"agey\":"63",\"austritt\":"20241015"}]'
   )
 
   expect_error(fmt_splg_admin_newborn(
@@ -211,7 +211,7 @@ test_that("fmt_splg formats correctly", {
       beatmung = NA,
       austrittsdatum = c(20240331, 20241015)
     ),
-    newbornorene = data.frame(
+    newborn = data.frame(
       fall_id = NA,
       gestationsalter2 = NA,
       geburtsgewicht = NA
@@ -255,10 +255,10 @@ test_that("fmt_splg formats correctly", {
     result_group_text,
     c(
       'SPLG-INPUT',
-      'fallid=1234;burnr=71291845;agey=34;austritt=20240331',
+      'fallid=1234;agey=34;austritt=20240331',
       'ICD C541;C99;K660',
       'CHOP 6861:::20180419;6541:0::20180419',
-      'fallid=5678;burnr=71234865;agey=63;austritt=20241015',
+      'fallid=5678;agey=63;austritt=20241015',
       'ICD ',
       'CHOP '
     )
@@ -267,7 +267,7 @@ test_that("fmt_splg formats correctly", {
   # expect_equal(result_group_xml, '')
   expect_equal(
     result_group_json,
-    '{"splg-json":[{"fallid":"1234","burnr":"71291845","agey":"34","austritt":"20240331",[{"rang":"1","code":"C541","zusatz":"C99"},{"rang":"2","code":"K660"}],[{"rang":"1","code":"6861","seitigkeit":"","beginn":"20180419","ambext":""},{"rang":"2","code":"6541","seitigkeit":"0","beginn":"20180419","ambext":""}]},{"fallid":"5678","burnr":"71234865","agey":"63","austritt":"20241015"}]}'
+    '{"splg-json":[{"fallid":"1234","agey":"34","austritt":"20240331",[{"rang":"1","code":"C541","zusatz":"C99"},{"rang":"2","code":"K660"}],[{"rang":"1","code":"6861","seitigkeit":"","beginn":"20180419","ambext":""},{"rang":"2","code":"6541","seitigkeit":"0","beginn":"20180419","ambext":""}]},{"fallid":"5678","agey":"63","austritt":"20241015"}]}'
   )
 
   expect_error(fmt_splg(spiges_test_data, type = 'group', format = 'XML'))

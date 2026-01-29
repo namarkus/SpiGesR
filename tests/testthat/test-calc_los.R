@@ -24,7 +24,7 @@ test_that("calculation of los works", {
       austritt_aufenthalt = 1L
     ),
 
-    patientenbewegung = data.frame(
+    episode = data.frame(
       fall_id = c('AM1', 'AM1', 'AM2', 'CM1'),
       episode_id = c(1L, 2L, 1L, 1L),
       episode_art = 2L,

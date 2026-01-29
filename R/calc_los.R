@@ -2,16 +2,16 @@
 #' Berechne Varianten der Aufenthaltsdauer aus spiges_data
 #'
 #' Erwartet eine Liste `spiges_data` mit mindestens `admin` und einer
-#' Patientenbewegungs-Tabelle. Liefert ein tibble mit Varianten.
+#' episodes-Tabelle. Liefert ein tibble mit Varianten.
 #'
-#' @param spiges_data Liste mit data.frames (z.B. spiges_data$admin, spiges_data$patientenbewegung)
+#' @param spiges_data Liste mit data.frames (z.B. spiges_data$admin, spiges_data$episode)
 #' @param admin_name Name des Admin-Data.frames (default: "admin")
-#' @param movement_name Name der Bewegungs-Tabelle (default: "patientenbewegung")
+#' @param movement_name Name der Bewegungs-Tabelle (default: "episode")
 #' @param id_col optionaler Patienten-ID-Name (wenn NULL wird versucht zu erkennen)
 #' @param max_gap_hours max. Stunden-Gap um Bewegungen derselben Episode zuzuordnen (default: 24)
 #' @return tibble mit Spalten: patient_id, variant, start, end, length_days, source
 calc_los <- function(spiges_data) {
-  check_spiges_tables(spiges_data, tablenames = c("admin", "patientenbewegung"))
+  check_spiges_tables(spiges_data, tablenames = c("admin", "episode"))
 
   admin_varnames <- c(
     'fall_id',
@@ -24,7 +24,7 @@ calc_los <- function(spiges_data) {
   )
   check_spiges_var(spiges_data$admin, var_names = admin_varnames)
 
-  patbew_varnames <- c(
+  episode_varnames <- c(
     'fall_id',
     'episode_id',
     'episode_beginn',
@@ -32,10 +32,10 @@ calc_los <- function(spiges_data) {
     'episode_art',
     'wiedereintritt_aufenthalt'
   )
-  check_spiges_var(spiges_data$patientenbewegung, var_names = patbew_varnames)
+  check_spiges_var(spiges_data$episode, var_names = episode_varnames)
 
   spiges_admin <- spiges_data$admin |> dplyr::select(all_of(admin_varnames))
-  spiges_patbew <- spiges_data$patientenbewegung |>
+  spiges_patbew <- spiges_data$episode |>
     dplyr::select(all_of(patbew_varnames))
 
   # prepare cases
