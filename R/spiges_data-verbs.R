@@ -104,7 +104,9 @@ select_in <- function(.data, .tab, ...) {
 #'
 #' @return A `spiges_data` object with only the selected tables.
 #' @seealso [dplyr::select()], [dplyr::dplyr_tidy_select]
+#' @importFrom dplyr select
 #' @export
+#' @method select spiges_data
 select.spiges_data <- function(.data, ...) {
   check_spiges_data(.data)
 
