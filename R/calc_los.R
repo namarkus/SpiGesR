@@ -35,8 +35,8 @@ calc_los <- function(spiges_data) {
   check_spiges_var(spiges_data$episode, var_names = episode_varnames)
 
   spiges_admin <- spiges_data$admin |> dplyr::select(all_of(admin_varnames))
-  spiges_patbew <- spiges_data$episode |>
-    dplyr::select(all_of(patbew_varnames))
+  spiges_episode <- spiges_data$episode |>
+    dplyr::select(all_of(episode_varnames))
 
   # prepare cases
   cases <-
@@ -56,7 +56,7 @@ calc_los <- function(spiges_data) {
 
   # Episodes represent the time between two sub-cases. From these, periods are created that represent the time between discharge and readmission.  periods <-
   first_periods <-
-    spiges_patbew |>
+    spiges_episode |>
     dplyr::filter(episode_art == 2) |>
     dplyr::group_by(fall_id) |>
     dplyr::mutate(period_id = dplyr::row_number(episode_id) - 1L) |> # make sure, first episode starts at 0
