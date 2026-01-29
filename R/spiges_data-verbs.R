@@ -3,6 +3,8 @@
 #' @inheritParams dplyr::filter
 #' @export
 filter.spiges_data <- function(.data, ...) {
+  check_spiges_data(.data)
+
   ids <- .data$admin |>
     dplyr::filter(...) |>
     dplyr::pull(fall_id) |>
@@ -26,18 +28,40 @@ filter.spiges_data <- function(.data, ...) {
 #'
 #' @inheritParams dplyr::filter
 #' @param .data A `spiges_data` object (named list of tables).
-#' @param tab Table to filter (unquoted name or string), e.g. `admin` or `"admin"`.
+#' @param .tab Table to filter (unquoted name or string), e.g. `admin` or `"admin"`.
 #'
-#' @return A `spiges_data` object with filtered rows in `tab`.
+#' @return A `spiges_data` object with filtered rows in `.tab`.
 #' @seealso [dplyr::filter()]
 #' @export
-filter_tab <- function(.data, tab, ...) {
+filter_in <- function(.data, .tab, ...) {
   check_spiges_data(.data)
 
-  tab_name <- rlang::as_string(rlang::ensym(tab))
+  tab_name <- rlang::as_string(rlang::ensym(.tab))
   check_spiges_table(.data, tab_name)
 
   .data[[tab_name]] <- dplyr::filter(.data[[tab_name]], ...)
+  .data
+}
+
+#' Mutate variables in a table of a spiges_data object
+#'
+#' Applies [dplyr::mutate()] to a single table inside a `spiges_data` object.
+#' All other tables remain unchanged.
+#'
+#' @inheritParams dplyr::mutate
+#' @param .data A `spiges_data` object (named list of tables).
+#' @param .tab Table to mutate (unquoted name or string), e.g. `admin` or `"admin"`.
+#'
+#' @return A `spiges_data` object with mutated columns in `.tab`.
+#' @seealso [dplyr::mutate()]
+#' @export
+mutate_in <- function(.data, .tab, ...) {
+  check_spiges_data(.data)
+
+  tab_name <- rlang::as_string(rlang::ensym(.tab))
+  check_spiges_table(.data, tab_name)
+
+  .data[[tab_name]] <- dplyr::mutate(.data[[tab_name]], ...)
   .data
 }
 
@@ -48,18 +72,18 @@ filter_tab <- function(.data, tab, ...) {
 #' [dplyr::select()].
 #'
 #' @param .data A `spiges_data` object (named list of tables).
-#' @param tab Table to modify (unquoted name or string), e.g. `admin` or `"admin"`.
+#' @param .tab Table to modify (unquoted name or string), e.g. `admin` or `"admin"`.
 #' @param ... <[`tidy-select`][dplyr::dplyr_tidy_select]> Columns to select from
 #'   the chosen table. Supports the same helpers as [dplyr::select()], e.g.
 #'   `starts_with()`, `ends_with()`, `where()`, `-col`, etc.
 #'
-#' @return A `spiges_data` object with the selected columns applied to `tab`.
+#' @return A `spiges_data` object with the selected columns applied to `.tab`.
 #' @seealso [dplyr::select()], [dplyr::dplyr_tidy_select]
 #' @export
-select_tab <- function(.data, tab, ...) {
+select_in <- function(.data, .tab, ...) {
   check_spiges_data(.data)
 
-  tab_name <- rlang::as_string(rlang::ensym(tab))
+  tab_name <- rlang::as_string(rlang::ensym(.tab))
   check_spiges_table(.data, tab_name)
 
   if (!tab_name %in% names(.data)) {
@@ -75,7 +99,6 @@ select_tab <- function(.data, tab, ...) {
 #' Selects tables from a `spiges_data` object (a named list of tables).
 #' Selection syntax in `...` uses tidyselect, like [dplyr::select()].
 #'
-#' @inheritParams dplyr::select
 #' @param .data A `spiges_data` object (named list of tables).
 #' @param ... <[`tidy-select`][dplyr::dplyr_tidy_select]> Tables to select.
 #'
